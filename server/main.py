@@ -5,7 +5,6 @@ from flask_cors import CORS
 from flask import render_template, redirect, send_from_directory
 
 import utils.path_fixes as pf
-import config
 from utils.f import ifnone
 
 from data_processing import from_model

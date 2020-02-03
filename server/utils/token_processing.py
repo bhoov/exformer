@@ -5,7 +5,6 @@ If adding more metadata, modify the definitions in `to_spacy_meta` and `meta_to_
 import h5py
 import numpy as np
 import spacy
-import config
 from transformers.tokenization_bert import BertTokenizer
 from .f import flatten_, assoc, memoize, GetAttr
 
