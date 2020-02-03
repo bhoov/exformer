@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/bhoov/transformers.git
+	branch = exbert-mods
+	commit = a0b899d114c1891dc685ce448077efab4a386348
+	parent = 8235ef04d0dca4d47c9106f70c0bd8681895fb8f
+	method = merge
+	cmdver = 0.4.1
