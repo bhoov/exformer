@@ -1,4 +1,4 @@
-name: exbert
+name: exformer
 channels:
   - pytorch
   - conda-forge
