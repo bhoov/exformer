@@ -1,14 +1,7 @@
-import spacy
 from copy import deepcopy
 import numpy as np
 from functools import partial
 from .f import memoize
-
-def add_base_exceptions(language_exceptions): 
-    merged = {}
-    merged.update(language_exceptions)
-    merged.update(spacy.lang.tokenizer_exceptions.BASE_EXCEPTIONS)
-    return merged
 
 def check_key_len(d, length):
     for k, v in d.items():
