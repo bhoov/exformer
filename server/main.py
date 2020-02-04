@@ -8,7 +8,7 @@ import utils.path_fixes as pf
 from utils.f import ifnone
 
 from data_processing import from_model
-from transformer_details import from_pretrained
+from model_api import get_details
 
 app = connexion.FlaskApp(__name__, static_folder="client/dist", specification_dir=".")
 flask_app = app.app
@@ -36,10 +36,24 @@ def send_static_client(path):
 ## CONNEXION API ##
 # ======================================================================
 def get_model_details(**request):
-    model = request['model']
-    deets = from_pretrained(model)
+    """Get important information about a model, like the number of layers and heads
+    
+    Args:
+        request['model']: The model name
 
-    info = deets.model.config
+    Returns:
+        {
+            status: 200,
+            payload: {
+                nlayers (int)
+                nheads (int)
+            }
+        }
+    """
+    mname = request['model']
+    deets = get_details(mname)
+
+    info = deets.config
     nlayers = info.num_hidden_layers
     nheads = info.num_attention_heads
 
@@ -53,9 +67,36 @@ def get_model_details(**request):
         "payload": payload_out,
     }
 
-def get_attention_and_meta(**request):
+def get_attentions_and_preds(**request):
+    """For a sentence, at a layer, get the attentions and predictions
+    
+    Args:
+        request['model']: Model name
+        request['sentence']: Sentence to get the attentions for
+        request['layer']: Which layer to extract from
+
+    Returns:
+        {
+            status: 200
+            payload: {
+                aa: {
+                    att: Array((nheads, ntoks, ntoks))
+                    left: [{
+                        text (str), 
+                        topk_words (List[str]),
+                        topk_probs (List[float])
+                    }, ...]
+                    right: [{
+                        text (str), 
+                        topk_words (List[str]),
+                        topk_probs (List[float])
+                    }, ...]
+                }
+            }
+        }
+    """
     model = request["model"]
-    details = from_pretrained(model)
+    details = get_details(model)
 
     sentence = request["sentence"]
     layer = int(request["layer"])
@@ -69,17 +110,42 @@ def get_attention_and_meta(**request):
         "payload": payload_out
     }
 
-
 def update_masked_attention(**request):
-    """
-    Return attention information from tokens and mask indices.
+    """From tokens and indices of what should be masked, get the attentions and predictions
+    
+    payload = request['payload']
 
-    Object: {"a" : {"sentence":__, "mask_inds"}, "b" : {...}}
+    Args:
+        payload['model'] (str): Model name
+        payload['tokens'] (List[str]): Tokens to pass through the model
+        payload['sentence'] (str): Original sentence the tokens came from
+        payload['mask'] (List[int]): Which indices to mask
+        payload['layer'] (int): Which layer to extract information from
+
+    Returns:
+        {
+            status: 200
+            payload: {
+                aa: {
+                    att: Array((nheads, ntoks, ntoks))
+                    left: [{
+                        text (str), 
+                        topk_words (List[str]),
+                        topk_probs (List[float])
+                    }, ...]
+                    right: [{
+                        text (str), 
+                        topk_words (List[str]),
+                        topk_probs (List[float])
+                    }, ...]
+                }
+            }
+        }
     """
     payload = request["payload"]
 
     model = payload['model']
-    details = from_pretrained(model)
+    details = get_details(model)
 
     tokens = payload["tokens"]
     sentence = payload["sentence"]
@@ -95,69 +161,6 @@ def update_masked_attention(**request):
 
     deets = details.att_from_tokens(token_inputs, sentence)
     payload_out = deets.to_json(layer)
-
-    return {
-        "status": 200,
-        "payload": payload_out,
-    }
-
-
-def nearest_embedding_search(**request):
-    """Return the token text and the metadata in JSON"""
-    model = request["model"]
-    corpus = request["corpus"]
-
-    try:
-        details = from_pretrained(model)
-    except KeyError as e:
-        return {'status': 405, "payload": None}
-
-    try:
-        cc = from_model(model, corpus)
-    except FileNotFoundError as e:
-        return {
-            "status": 406,
-            "payload": None
-        }
-
-    q = np.array(request["embedding"]).reshape((1, -1)).astype(np.float32)
-    layer = int(request["layer"])
-    heads = list(map(int, list(set(request["heads"]))))
-    k = int(request["k"])
-
-    out = cc.search_embeddings(layer, q, k)
-
-    payload_out = [o.to_json(layer, heads) for o in out]
-
-    return {
-        "status": 200,
-        "payload": payload_out
-    }
-
-
-def nearest_context_search(**request):
-    """Return the token text and the metadata in JSON"""
-    model = request["model"]
-    corpus = request["corpus"]
-    print("CORPUS: ", corpus)
-
-    try:
-        details = from_pretrained(model)
-    except KeyError as e:
-        return {'status': 405, "payload": None}
-
-    try:
-        cc = from_model(model, corpus)
-    except FileNotFoundError as e:
-        return {'status': 406, "payload": None}
-
-    q = np.array(request["context"]).reshape((1, -1)).astype(np.float32)
-    layer = int(request["layer"])
-    heads = list(map(int, list(set(request["heads"]))))
-    k = int(request["k"])
-
-    out = cc.search_contexts(layer, heads, q, k)
-    payload_out = [o.to_json(layer, heads) for o in out]
 
     return {
         "status": 200,

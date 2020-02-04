@@ -6,6 +6,10 @@ from transformers import AutoConfig, AutoTokenizer, AutoModelWithLMHead, AutoMod
 from transformer_formatter import TransformerOutputFormatter
 from utils.f import delegates, pick, memoize
 
+@memoize
+def get_details(mname):
+    return ModelDetails(mname)
+
 def get_model_tok(mname):
     conf = AutoConfig.from_pretrained(mname, output_attentions=True, output_past=False)
     tok = AutoTokenizer.from_pretrained(mname, config=conf)
