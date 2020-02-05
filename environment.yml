@@ -15,4 +15,4 @@ dependencies:
   - numpy
   - pytorch
   - torchvision
-  - transformers
+  - transformers>=2.4.1
