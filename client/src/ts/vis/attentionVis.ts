@@ -173,14 +173,14 @@ function createStaticSkeleton(base: D3Sel) {
                 clsSwitch.append('span')
                     .attr('class', 'short-slider round')
 
-    const selectedHeads = rightControlHalf.append('div')
+    const selectedHeadDiv = rightControlHalf.append('div')
         .attr('id', 'selected-head-display')
 
-        selectedHeads.append('div')
+        selectedHeadDiv.append('div')
             .classed('input-description', true)
             .text('Selected heads:')
 
-        selectedHeads.append('div').attr('id', 'selected-heads')
+        const selectedHeads = selectedHeadDiv.append('div').attr('id', 'selected-heads')
 
     const headButtons = rightControlHalf.append('div')
         .classed('select-input', true)
@@ -300,7 +300,12 @@ export class MainGraphic {
         this.sels.body.style("cursor", "progress")
         this.api.getModelDetails(this.uiConf.model()).then(md => {
             const val = md.payload
+
+            // If changing to model with fewer layers, cap accordingly
             this.uiConf.nLayers(val.nlayers).nHeads(val.nheads)
+            const currLayer = this.uiConf.layer()
+            const maxLayer = this.uiConf.nLayers() - 1
+            this.uiConf.layer(Math.min(currLayer, maxLayer))
             this.initLayers(this.uiConf.nLayers())
 
             this.api.getMetaAttentions(this.uiConf.model(), this.uiConf.sentence(), this.uiConf.layer()).then(attention => {
@@ -568,13 +573,6 @@ export class MainGraphic {
         this.sels.form.sentenceA.attr('placeholder', "Enter new sentence to analyze")
         this.sels.form.sentenceA.attr('value', this.uiConf.sentence())
 
-        const clearInspector = () => {
-            self.vizs.corpusMatManager.clear();
-            self.vizs.corpusInspector.clear();
-            self.vizs.histograms.matchedWord.clear();
-            self.vizs.histograms.maxAtt.clear();
-        }
-
         const submitNewSentence = () => {
             // replace all occurences of '#' in sentence as this causes the API to break
             const sentence_a: string = this.sels.form.sentenceA.property("value").replace(/\#/g, '')
@@ -591,7 +589,6 @@ export class MainGraphic {
                         this.tokCapsule.updateFromResponse(r);
                         this._toggleTokenSel();
                         this.update();
-                        clearInspector();
                         this.sels.body.style("cursor", "default")
                     })
             }
@@ -728,12 +725,17 @@ export class MainGraphic {
         const data = [
             { name: "bert-base-cased", kind: tp.ModelKind.Bidirectional },
             { name: "bert-base-uncased", kind: tp.ModelKind.Bidirectional },
+            { name: "bert-base-german-cased", kind: tp.ModelKind.Bidirectional },
+            { name: "xlm-mlm-en-2048", kind: tp.ModelKind.Bidirectional },
             { name: "distilbert-base-uncased", kind: tp.ModelKind.Bidirectional },
             { name: "distilroberta-base", kind: tp.ModelKind.Bidirectional },
-            // { name: "roberta-base", kind: tp.ModelKind.Bidirectional },
+            { name: "albert-base-v1", kind: tp.ModelKind.Bidirectional },
+            { name: "albert-xxlarge-v2", kind: tp.ModelKind.Bidirectional },
+            { name: "xlm-roberta-base", kind: tp.ModelKind.Bidirectional },
+            // { name: "t5-small", kind: tp.ModelKind.Autoregressive },
+            { name: "roberta-base", kind: tp.ModelKind.Bidirectional },
             { name: "gpt2", kind: tp.ModelKind.Autoregressive },
-            // { name: "gpt2-medium", kind: tp.ModelKind.Autoregressive },
-            // { name: "distilgpt2", kind: tp.ModelKind.Autoregressive },
+            { name: "distilgpt2", kind: tp.ModelKind.Autoregressive },
         ]
 
         const names = R.map(R.prop('name'))(data)

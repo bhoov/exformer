@@ -89,8 +89,6 @@ class ModelDetails:
         else:
             logits, atts = out
 
-        print("Logits: ", logits)
-        print("atts: ", atts[0].shape)
         return logits, atts
 
     def logits2words(self, logits, topk):

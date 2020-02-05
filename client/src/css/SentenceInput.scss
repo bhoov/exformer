@@ -1,9 +1,9 @@
 
 #sentence-input {
-    margin-bottom: -30px;
-    margin-right: -30px;
+    margin-bottom: 0px;
+    margin-right: 0px;
     margin-left: 10px;
-    width: 90%;
+    width: 100%;
 
     form {
         display: flex;
@@ -16,21 +16,15 @@
             flex-grow: 3;
 
             input {
-                // flex-grow: 4;
-                width: 100%;
-                max-width: 200px;
+                // flex-grow: 3;
+                width: 50%;
+                max-width: 700px;
                 margin-right: 5%;
             }
         }
-        
-        .padding {
-            flex-grow: 0.3;
-        }
-
 
         .btn {
             flex-grow: 1;
-            // display: inline-block;
         }
     }
 }
