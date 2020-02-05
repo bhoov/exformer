@@ -1,3 +1,7 @@
+/**
+ * Showing the top left part of exBERT, no information from the embeddings or the contexts
+ */
+
 import * as d3 from 'd3';
 import * as _ from "lodash"
 import * as R from 'ramda'
@@ -9,19 +13,13 @@ import { UIConfig } from '../uiConfig'
 import { TextTokens, LeftTextToken, RightTextToken } from './TextToken'
 import { AttentionHeadBox, getAttentionInfo } from './AttentionHeadBox'
 import { AttentionGraph } from './AttentionConnector'
-import { CorpusInspector } from './CorpusInspector'
 import { TokenWrapper, sideToLetter } from '../data/TokenWrapper'
 import { AttentionWrapper, makeFromMetaResponse } from '../data/AttentionCapsule'
 import { SimpleEventHandler } from '../etc/SimpleEventHandler'
-import { CorpusMatManager } from '../vis/CorpusMatManager'
-import { CorpusHistogram } from '../vis/CorpusHistogram'
-import { FaissSearchResultWrapper } from '../data/FaissSearchWrapper'
 import { D3Sel, Sel } from '../etc/Util';
-import { from, fromEvent, interval } from 'rxjs'
+import { from, fromEvent } from 'rxjs'
 import { switchMap, map, tap } from 'rxjs/operators'
 import { BaseType } from "d3";
-import { SimpleMeta } from "../etc/types";
-import ChangeEvent = JQuery.ChangeEvent;
 
 
 function isNullToken(tok: tp.TokenEvent) {
@@ -69,8 +67,199 @@ function setSelDisabled(attr: boolean, sel: D3Sel) {
     sel.attr('disabled', val)
 }
 
+function createStaticSkeleton(base: D3Sel) {
+
+    /**
+     * Top level sections
+     */
+    const sentenceInput = base.append('div')
+        .attr("id", "sentence-input")
+
+    const connectorContainer = base.append('div')
+        .attr('id', 'connector-container')
+
+    const atnControls = connectorContainer.append('div')
+        .attr("id", "connector-controls")
+
+    const atnContainer = connectorContainer.append('div')
+        .attr("id", "atn-container")
+        .classed("text-center", true)
+
+    /**
+     * Sentence Input
+     */
+
+    const formGroup = sentenceInput.append('form')
+        .append('div').classed('form-group', true)
+
+        formGroup.append('label')
+            .attr('for', "form-sentence-a")
+            .text(' Input Sentence ')
+
+        const sentenceA = formGroup.append('input')
+            .attr('id', 'form-sentence-a')
+            .attr('type', 'text')
+            .attr('name', 'sent-a-input')
+
+    sentenceInput.append('div')
+        .classed('padding', true)
+    
+    const formButton = sentenceInput.append('button')
+        .attr('class', 'btn btn-primary')
+        .attr('id', "update-sentence")
+        .attr('type', 'button')
+
+        formButton.text("Update")
+
+    /**
+     * Connector Controls
+     */
+     const leftControlHalf = atnControls.append('div')
+        .classed('left-control-half', true)
+
+     const rightControlHalf = atnControls.append('div')
+        .attr('class', 'right-control-half head-control')
+
+        const modelSelection = leftControlHalf.append('div')
+            .attr('id', 'model-selection')
+
+            modelSelection.append('label')
+                .attr('for', 'model-options').text('Select model')
+
+            const modelSelector = modelSelection.append('select')
+                .attr('id', 'model-option-selector')
+                .attr('name', 'model-options')
+        
+        const slideContainer = leftControlHalf.append('div')
+            .classed('slide-container', true)
+
+            slideContainer.append('label')
+                .attr('for', 'my-range')
+                .html("Display top <span id=\"my-range-value\">...</span>% of attention")
+
+            const threshSlider = slideContainer.append('input')
+                .attr('type', 'range')
+                .attr('min', '0')
+                .attr('max', '100')
+                .attr('value', '70')
+                .classed('slider', true)
+                .attr('id', 'my-range')
+
+        const layerSelection = leftControlHalf.append('div')
+            .attr('id', 'layer-selection')
+
+            layerSelection.append('div')
+                .classed('input-description', true)
+                .text("Layer: ")
+
+            const layerCheckboxes = layerSelection.append('div')
+                .attr('class', 'layer-select btn-group btn-group-toggle')
+                .attr('data-toggle', 'buttons')
+                .attr('id', 'layer-select')
+
+        const clsToggle = leftControlHalf.append('div')
+            .attr('id', 'cls-toggle')
+
+            clsToggle.append('div')
+                .attr('class', 'input-description')
+                .text("Hide Special Tokens")
+
+            const clsSwitch = clsToggle.append('label')
+                .attr('class', 'switch')
+
+                clsSwitch.append('input').attr('type', 'checkbox')
+                    .attr('checked', 'checked')
+                
+                clsSwitch.append('span')
+                    .attr('class', 'short-slider round')
+
+    const selectedHeads = rightControlHalf.append('div')
+        .attr('id', 'selected-head-display')
+
+        selectedHeads.append('div')
+            .classed('input-description', true)
+            .text('Selected heads:')
+
+        selectedHeads.append('div').attr('id', 'selected-heads')
+
+    const headButtons = rightControlHalf.append('div')
+        .classed('select-input', true)
+        .attr('id', 'head-all-or-none')
+
+        const headSelectAll = headButtons.append('button').attr('id', 'select-all-heads').text("Select all heads")
+        const headSelectNone = headButtons.append('button').attr('id', 'select-no-heads').text("Unselect all heads")
+
+    const infoContainer = rightControlHalf.append('div')
+        .attr('id', 'usage-info')
+
+        infoContainer.append('p').html("You focus on one token by <b>click</b>.<br /> You can mask any token by <b>double click</b>.")
+        infoContainer.append('p').html("You can select and de-select a head by a <b>click</b> on the heatmap columns")
+
+    connectorContainer.append('div').attr('id', 'vis-break')
+
+    /**
+     * For main attention vis
+     */
+
+    const headInfoBox = atnContainer.append('div')
+        .attr('id', "head-info-box")
+        .classed('mat-hover-display', true)
+        .classed('text-center', true)
+        .style('width', String(70) + 'px')
+        .style('height', String(30) + 'px')
+        .style('visibillity', 'hidden')
+
+    const headBoxLeft = atnContainer.append('svg')
+        .attr('id', 'left-att-heads')
+
+    const tokensLeft = atnContainer.append('div')
+        .attr("id", "left-tokens")
+
+    const atnDisplay = atnContainer.append('svg')
+        .attr("id", "atn-display")
+
+    const tokensRight = atnContainer.append('div')
+        .attr("id", "right-tokens")
+
+    const headBoxRight = atnContainer.append('svg')
+        .attr('id', 'right-att-heads')
+
+    /**
+     * Return an object that provides handles to the important parts here
+     */
+
+    const pctSpan = base.select("#my-range-value")
+
+    const sels = {
+        body: d3.select('body'),
+        atnContainer: atnContainer,
+        atnDisplay: atnDisplay,
+        atnHeads: {
+            left: headBoxLeft,
+            right: headBoxRight,
+            headInfo: headInfoBox
+        },
+        form: {
+            sentenceA: sentenceA,
+            button: formButton
+        },
+        tokens: {
+            left: tokensLeft,
+            right:  tokensRight
+        },
+        modelSelector: modelSelector,
+        clsToggle: clsToggle,
+        layerCheckboxes: layerCheckboxes,
+        selectedHeads: selectedHeads,
+        headSelectAll: headSelectAll,
+        headSelectNone: headSelectNone,
+        threshSlider: threshSlider,
+    }
+    return sels
+}
 
 export class MainGraphic {
+    base: D3Sel
     api: API
     uiConf: UIConfig
     attCapsule: AttentionWrapper
@@ -79,75 +268,17 @@ export class MainGraphic {
     vizs: any                           // Contains vis components wrapped around parent sel
     eventHandler: SimpleEventHandler    // Orchestrates events raised from components
 
-    constructor() {
+    /**
+     * 
+     * @param base 'div' html element into which everything below will be rendered
+     */
+    constructor(baseDiv: Element) {
+        this.base = d3.select(baseDiv)
         this.api = new API()
         this.uiConf = new UIConfig()
-        this.skeletonInit()
-        this.mainInit();
-    }
+        this.sels = createStaticSkeleton(this.base)
 
-    /**
-     * Functions that can be called without any information of a response.
-     * 
-     * This should be called once and only once
-     */
-    skeletonInit() {
-        this.sels = {
-            body: d3.select('body'),
-            atnContainer: d3.select('#atn-container'),
-            atnDisplay: d3.select("#atn-display"),
-            modelSelector: d3.select("#model-option-selector"),
-            corpusSelector: d3.select("#corpus-select"),
-            atnHeads: {
-                left: d3.select("#left-att-heads"),
-                right: d3.select("#right-att-heads"),
-                headInfo: d3.select("#head-info-box")
-                    .classed('mat-hover-display', true)
-                    .classed('text-center', true)
-                    .style('width', String(70) + 'px')
-                    .style('height', String(30) + 'px')
-                    .style('visibillity', 'hidden')
-            },
-            form: {
-                sentenceA: d3.select("#form-sentence-a"),
-                button: d3.select("#update-sentence"),
-            },
-            tokens: {
-                left: d3.select("#left-tokens"),
-                right: d3.select("#right-tokens"),
-            },
-            clsToggle: d3.select("#cls-toggle").select(".switch"),
-            layerCheckboxes: d3.select("#layer-select"),
-            headCheckboxes: d3.select("#head-select"),
-            contextQuery: d3.select("#search-contexts"),
-            embeddingQuery: d3.select("#search-embeddings"),
-            selectedHeads: d3.select("#selected-heads"),
-            headSelectAll: d3.select("#select-all-heads"),
-            headSelectNone: d3.select("#select-no-heads"),
-            testCheckbox: d3.select("#simple-embed-query"),
-            threshSlider: d3.select("#my-range"),
-            corpusInspector: d3.select("#corpus-similar-sentences-div"),
-            corpusMatManager: d3.select("#corpus-mat-container"),
-            corpusMsgBox: d3.select("#corpus-msg-box"),
-            histograms: {
-                matchedWordDescription: d3.select("#match-kind"),
-                matchedWord: d3.select("#matched-histogram-container"),
-                maxAtt: d3.select("#max-att-histogram-container"),
-            },
-            buttons: {
-                killLeft: d3.select("#kill-left"),
-                addLeft: d3.select("#minus-left"),
-                addRight: d3.select("#plus-right"),
-                killRight: d3.select("#kill-right"),
-                refresh: d3.select("#mat-refresh")
-            },
-            metaSelector: {
-                matchedWord: d3.select("#matched-meta-select"),
-                maxAtt: d3.select("#max-att-meta-select")
-            }
-        }
-
-        this.eventHandler = new SimpleEventHandler(<Element>this.sels.body.node());
+        this.eventHandler = new SimpleEventHandler(<Element>this.base.node());
 
         this.vizs = {
             leftHeads: new AttentionHeadBox(this.sels.atnHeads.left, this.eventHandler, { side: "left", }),
@@ -157,15 +288,11 @@ export class MainGraphic {
                 right: new RightTextToken(this.sels.tokens.right, this.eventHandler),
             },
             attentionSvg: new AttentionGraph(this.sels.atnDisplay, this.eventHandler),
-            corpusInspector: new CorpusInspector(this.sels.corpusInspector, this.eventHandler),
-            corpusMatManager: new CorpusMatManager(this.sels.corpusMatManager, this.eventHandler, { idxs: this.uiConf.offsetIdxs() }),
-            histograms: {
-                matchedWord: new CorpusHistogram(this.sels.histograms.matchedWord, this.eventHandler),
-                maxAtt: new CorpusHistogram(this.sels.histograms.maxAtt, this.eventHandler),
-            },
         }
 
         this._bindEventHandler()
+
+        this.mainInit()
     }
 
     private mainInit() {
@@ -183,23 +310,14 @@ export class MainGraphic {
                 // Wrap postInit into function so asynchronous call does not mess with necessary inits
                 const postResponseDisplayCleanup = () => {
                     this._toggleTokenSel()
-
-                    const toDisplay = this.uiConf.displayInspector()
-                    this._searchDisabler()
-
-                    if (toDisplay == 'context') {
-                        this._queryContext()
-                    } else if (toDisplay == 'embeddings') {
-                        this._queryEmbeddings()
-                    }
                 }
 
                 let normBy
                 if ((this.uiConf.modelKind() == tp.ModelKind.Autoregressive) && (!this.uiConf.hideClsSep())) {
-                    normBy = tp.NormBy.Col
+                    normBy = tp.NormBy.COL
                 }
                 else {
-                    normBy = tp.NormBy.All
+                    normBy = tp.NormBy.ALL
                 }
                 this.vizs.attentionSvg.normBy = normBy
 
@@ -363,35 +481,9 @@ export class MainGraphic {
                 unselectHead(e.head)
             }
 
-            this._searchDisabler()
             this._renderHeadSummary();
             this.renderSvg();
         })
-
-        this.eventHandler.bind(CorpusMatManager.events.mouseOver, (e: { val: "pos" | "dep" | "is_ent", offset: number }) => {
-            // Uncomment the below if you want to modify the whole column
-            // const selector = `.inspector-cell[index-offset='${e.offset}']`
-            // d3.selectAll(selector).classed("hovered-col", true)
-        })
-
-        this.eventHandler.bind(CorpusMatManager.events.mouseOut, (e: { offset: number, idx: number }) => {
-            // Uncomment the below if you want to modify the whole column
-            // const selector = `.inspector-cell[index-offset='${e.offset}']`
-            // d3.selectAll(selector).classed("hovered-col", false)
-        })
-
-        this.eventHandler.bind(CorpusMatManager.events.rectMouseOver, (e: { offset: number, idx: number }) => {
-            const row = d3.select(`.inspector-row[rownum='${e.idx}']`)
-            const word = row.select(`.inspector-cell[index-offset='${e.offset}']`)
-            word.classed("hovered-col", true)
-        })
-
-        this.eventHandler.bind(CorpusMatManager.events.rectMouseOut, (e: { offset: number, idx: number }) => {
-            const row = d3.select(`.inspector-row[rownum='${e.idx}']`)
-            const word = row.select(`.inspector-cell[index-offset='${e.offset}']`)
-            word.classed("hovered-col", false)
-        })
-
     }
 
     private _toggleTokenSel() {
@@ -421,8 +513,6 @@ export class MainGraphic {
             this.grayToggle(+e.ind)
             this.markNextToggle(+e.ind, this.tokCapsule.a.length())
         }
-
-        this._searchDisabler()
     }
 
     /** Gray all tokens that have index greater than ind */
@@ -463,187 +553,13 @@ export class MainGraphic {
 
     }
 
-    private _initModelSelection() {
-        const self = this
-
-        // Below are the available models. Will need to choose 3 to be available ONLY
-        const data = [
-            { name: "bert-base-cased", kind: tp.ModelKind.Bidirectional },
-            { name: "bert-base-uncased", kind: tp.ModelKind.Bidirectional },
-            { name: "distilbert-base-uncased", kind: tp.ModelKind.Bidirectional },
-            { name: "distilroberta-base", kind: tp.ModelKind.Bidirectional },
-            // { name: "roberta-base", kind: tp.ModelKind.Bidirectional },
-            { name: "gpt2", kind: tp.ModelKind.Autoregressive },
-            // { name: "gpt2-medium", kind: tp.ModelKind.Autoregressive },
-            // { name: "distilgpt2", kind: tp.ModelKind.Autoregressive },
-        ]
-
-        const names = R.map(R.prop('name'))(data)
-        const kinds = R.map(R.prop('kind'))(data)
-        const kindmap = R.zipObj(names, kinds)
-
-        this.sels.modelSelector.selectAll('.model-option')
-            .data(data)
-            .join('option')
-            .classed('model-option', true)
-            .property('value', d => d.name)
-            .attr("modelkind", d => d.kind)
-            .text(d => d.name)
-
-        this.sels.modelSelector.property('value', this.uiConf.model());
-
-        this.sels.modelSelector.on('change', function () {
-            const me = d3.select(this)
-            const mname = me.property('value')
-            self.uiConf.model(mname);
-            self.uiConf.modelKind(kindmap[mname]);
-            if (kindmap[mname] == tp.ModelKind.Autoregressive) {
-                console.log("RESETTING MASK INDS");
-                self.uiConf.maskInds([])
-            }
-            self.mainInit();
-        })
-    }
-
-    private _initCorpusSelection() {
-        const data = [
-            { code: "woz", display: "Wizard of Oz" },
-            { code: "wiki", display: "Wikipedia" },
-        ]
-
-        const self = this
-        self.sels.corpusSelector.selectAll('option')
-            .data(data)
-            .join('option')
-            .property('value', d => d.code)
-            .text(d => d.display)
-
-        this.sels.corpusSelector.on('change', function () {
-            const me = d3.select(this)
-            self.uiConf.corpus(me.property('value'))
-            console.log(self.uiConf.corpus());
-        })
-
-
-    }
-
     private _staticInits() {
         this._initSentenceForm();
         this._initModelSelection();
-        this._initCorpusSelection();
-        this._initQueryForm();
-        this._initAdder();
         this._renderHeadSummary();
-        this._initMetaSelectors();
         this._initToggle();
         this.renderAttHead();
         this.renderTokens();
-    }
-
-    private _initAdder() {
-        const updateUrlOffsetIdxs = () => {
-            this.uiConf.offsetIdxs(this.vizs.corpusMatManager.idxs)
-        }
-
-        const fixCorpusMatHeights = () => {
-            const newWrapped = this._wrapResults(this.vizs.corpusMatManager.data())
-            this.vizs.corpusMatManager.data(newWrapped.data)
-            updateUrlOffsetIdxs()
-        }
-
-        this.sels.buttons.addRight.on('click', () => {
-            this.vizs.corpusMatManager.addRight()
-            updateUrlOffsetIdxs()
-        })
-
-        this.sels.buttons.addLeft.on('click', () => {
-            this.vizs.corpusMatManager.addLeft()
-            updateUrlOffsetIdxs()
-        })
-
-        this.sels.buttons.killRight.on('click', () => {
-            this.vizs.corpusMatManager.killRight()
-            updateUrlOffsetIdxs()
-        })
-
-        this.sels.buttons.killLeft.on('click', () => {
-            this.vizs.corpusMatManager.killLeft()
-            updateUrlOffsetIdxs()
-        })
-
-        this.sels.buttons.refresh.on('click', () => {
-            fixCorpusMatHeights();
-        })
-
-        const onresize = () => {
-            if (this.sels.corpusInspector.text() != '') fixCorpusMatHeights();
-        }
-
-        window.onresize = onresize
-    }
-
-    private _initMetaSelectors() {
-        this._initMatchedWordSelector(this.sels.metaSelector.matchedWord)
-        this._initMaxAttSelector(this.sels.metaSelector.maxAtt)
-    }
-
-    private _initMaxAttSelector(sel: D3Sel) {
-        const self = this;
-
-        const chooseSelected = (value) => {
-            const ms = sel.selectAll('label')
-            ms.classed('active', false)
-            const el = sel.selectAll(`label[value=${value}]`)
-            el.classed('active', true)
-        }
-
-        chooseSelected(this.uiConf.metaMax())
-
-        const el = sel.selectAll('label')
-        el.on('click', function () {
-            const val = <SimpleMeta>d3.select(this).attr('value');
-
-            // Do toggle
-            sel.selectAll('.active').classed('active', false)
-            d3.select(this).classed('active', true)
-            self.uiConf.metaMax(val)
-            self.vizs.histograms.maxAtt.meta(val)
-        })
-    }
-
-    private _initMatchedWordSelector(sel: D3Sel) {
-        const self = this;
-
-        const chooseSelected = (value) => {
-            const ms = sel.selectAll('label')
-            ms.classed('active', false)
-            const el = sel.selectAll(`label[value=${value}]`)
-            el.classed('active', true)
-        }
-
-        chooseSelected(this.uiConf.metaMatch())
-
-        const el = sel.selectAll('label')
-        el.on('click', function () {
-            const val = <SimpleMeta>d3.select(this).attr('value')
-
-            // Do toggle
-            sel.selectAll('.active').classed('active', false)
-            d3.select(this).classed('active', true)
-            self.uiConf.metaMatch(val)
-            self._updateCorpusInspectorFromMeta(val)
-        })
-    }
-
-    private _disableSearching(attr: boolean) {
-        setSelDisabled(attr, this.sels.contextQuery)
-        setSelDisabled(attr, this.sels.embeddingQuery)
-    }
-
-    private _updateCorpusInspectorFromMeta(val: tp.SimpleMeta) {
-        this.vizs.corpusInspector.showNext(this.uiConf.showNext)
-        this.vizs.corpusMatManager.pick(val)
-        this.vizs.histograms.matchedWord.meta(val)
     }
 
     private _initSentenceForm() {
@@ -697,163 +613,9 @@ export class MainGraphic {
         inputBox.on('keypress', onEnterSubmit)
     }
 
-    private _getSearchEmbeds() {
-        const savedToken = this.uiConf.token();
-        const out = this.vizs.tokens[savedToken.side].getEmbedding(savedToken.ind)
-        return out.embeddings
-    }
-
-    private _getSearchContext() {
-        const savedToken = this.uiConf.token();
-        const out = this.vizs.tokens[savedToken.side].getEmbedding(savedToken.ind)
-        return out.contexts
-    }
-
-    private _searchEmbeddings() {
-        const self = this;
-        console.log("SEARCHING EMBEDDINGS");
-        const embed = this._getSearchEmbeds()
-        const layer = self.uiConf.layer()
-        const heads = self.uiConf.heads()
-        const k = 50
-        self.vizs.corpusInspector.showNext(self.uiConf.showNext)
-
-        this.sels.body.style("cursor", "progress")
-        self.api.getNearestEmbeddings(self.uiConf.model(), self.uiConf.corpus(), embed, layer, heads, k)
-            .then((val: rsp.NearestNeighborResponse) => {
-                if (val.status == 406) {
-                    self.leaveCorpusMsg(`Embeddings are not available for model '${self.uiConf.model()}' and corpus '${self.uiConf.corpus()}' at this time.`)
-                }
-                else {
-                    const v = val.payload
-
-                    self.vizs.corpusInspector.unhideView()
-                    self.vizs.corpusMatManager.unhideView()
-
-                    // Get heights of corpus inspector rows.
-                    self.vizs.corpusInspector.update(v)
-                    const wrappedVals = self._wrapResults(v)
-                    const countedVals = wrappedVals.getMatchedHistogram()
-                    const offsetVals = wrappedVals.getMaxAttHistogram()
-
-                    self.vizs.corpusMatManager.update(wrappedVals.data)
-                    self.sels.histograms.matchedWordDescription.text(this.uiConf.matchHistogramDescription)
-                    console.log("MATCHER: ", self.sels.histograms.matchedWord);
-                    self.vizs.histograms.matchedWord.update(countedVals)
-                    self.vizs.histograms.maxAtt.update(offsetVals)
-                    self.uiConf.displayInspector('embeddings')
-                    this._updateCorpusInspectorFromMeta(this.uiConf.metaMatch())
-                }
-                this.sels.body.style("cursor", "default")
-            })
-    }
-
-    private _searchContext() {
-        const self = this;
-        console.log("SEARCHING CONTEXTS");
-        const context = this._getSearchContext()
-        const layer = self.uiConf.layer()
-        const heads = self.uiConf.heads()
-        const k = 50
-        self.vizs.corpusInspector.showNext(self.uiConf.showNext)
-
-        this.sels.body.style("cursor", "progress")
-
-        self.api.getNearestContexts(self.uiConf.model(), self.uiConf.corpus(), context, layer, heads, k)
-            .then((val: rsp.NearestNeighborResponse) => {
-                // Get heights of corpus inspector rows.
-                if (val.status == 406) {
-                    console.log("Contexts are not available!");
-                    self.leaveCorpusMsg(`Contexts are not available for model '${self.uiConf.model()}' and corpus '${self.uiConf.corpus()}' at this time.`)
-                }
-                else {
-                    const v = val.payload;
-                    console.log("HIDING");
-
-                    self.vizs.corpusInspector.update(v)
-
-                    Sel.hideElement(self.sels.corpusMsgBox)
-                    self.vizs.corpusInspector.unhideView()
-                    self.vizs.corpusMatManager.unhideView()
-
-                    const wrappedVals = self._wrapResults(v)
-                    const countedVals = wrappedVals.getMatchedHistogram()
-                    const offsetVals = wrappedVals.getMaxAttHistogram()
-                    self.vizs.corpusMatManager.update(wrappedVals.data)
-
-                    self.vizs.histograms.matchedWord.update(countedVals)
-                    self.vizs.histograms.maxAtt.update(offsetVals)
-
-                    self.uiConf.displayInspector('context')
-                    this._updateCorpusInspectorFromMeta(this.uiConf.metaMatch())
-                    self.vizs.histograms.maxAtt.meta(self.uiConf.metaMax())
-                }
-                this.sels.body.style("cursor", "default")
-            })
-    }
-
-    private _queryContext() {
-        const self = this;
-
-        if (this.uiConf.hasToken()) {
-            this._searchContext();
-        } else {
-            console.log("Was told to show inspector but was not given a selected token embedding")
-        }
-    }
-
-    private _queryEmbeddings() {
-        const self = this;
-
-        if (this.uiConf.hasToken()) {
-            console.log("token: ", this.uiConf.token());
-            this._searchEmbeddings();
-        } else {
-            console.log("Was told to show inspector but was not given a selected token embedding")
-        }
-    }
-
-    private _searchingDisabled() {
-        return (this.uiConf.heads().length == 0) || (!this.uiConf.hasToken())
-    }
-
-    private _searchDisabler() {
-        this._disableSearching(this._searchingDisabled())
-    }
-
-    private _initQueryForm() {
-        const self = this;
-        this._searchDisabler()
-
-        this.sels.contextQuery.on("click", () => {
-            self._queryContext()
-        })
-
-        this.sels.embeddingQuery.on("click", () => {
-            self._queryEmbeddings()
-        })
-    }
-
     private _renderHeadSummary() {
         this.sels.selectedHeads
             .html(R.join(', ', this.uiConf.heads().map(h => h + 1)))
-    }
-
-    // Modify faiss results with corresponding heights
-    private _wrapResults(returnedFaissResults: tp.FaissSearchResults[]) {
-
-        const rows = d3.selectAll('.inspector-row')
-
-        // Don't just use offsetHeight since that rounds to the nearest integer
-        const heights = rows.nodes().map((n: HTMLElement) => n.getBoundingClientRect().height)
-
-        const newVals = returnedFaissResults.map((v, i) => {
-            return R.assoc('height', heights[i], v)
-        })
-
-        const wrappedVals = new FaissSearchResultWrapper(newVals, this.uiConf.showNext)
-
-        return wrappedVals
     }
 
     private initLayers(nLayers: number) {
@@ -932,14 +694,12 @@ export class MainGraphic {
 
         this.sels.headSelectAll.on("click", function () {
             self.uiConf.selectAllHeads();
-            self._searchDisabler()
             self.renderSvg()
             self.renderAttHead()
         })
 
         this.sels.headSelectNone.on("click", function () {
             self.uiConf.selectNoHeads();
-            self._searchDisabler();
             self.renderSvg()
             self.renderAttHead()
             Sel.setHidden(".atn-curve")
@@ -958,6 +718,48 @@ export class MainGraphic {
                 this.renderSvg();
                 this.renderAttHead();
             }
+        })
+    }
+
+    private _initModelSelection() {
+        const self = this
+
+        // Below are the available models. Will need to choose 3 to be available ONLY
+        const data = [
+            { name: "bert-base-cased", kind: tp.ModelKind.Bidirectional },
+            { name: "bert-base-uncased", kind: tp.ModelKind.Bidirectional },
+            { name: "distilbert-base-uncased", kind: tp.ModelKind.Bidirectional },
+            { name: "distilroberta-base", kind: tp.ModelKind.Bidirectional },
+            // { name: "roberta-base", kind: tp.ModelKind.Bidirectional },
+            { name: "gpt2", kind: tp.ModelKind.Autoregressive },
+            // { name: "gpt2-medium", kind: tp.ModelKind.Autoregressive },
+            // { name: "distilgpt2", kind: tp.ModelKind.Autoregressive },
+        ]
+
+        const names = R.map(R.prop('name'))(data)
+        const kinds = R.map(R.prop('kind'))(data)
+        const kindmap = R.zipObj(names, kinds)
+
+        this.sels.modelSelector.selectAll('.model-option')
+            .data(data)
+            .join('option')
+            .classed('model-option', true)
+            .property('value', d => d.name)
+            .attr("modelkind", d => d.kind)
+            .text(d => d.name)
+
+        this.sels.modelSelector.property('value', this.uiConf.model());
+
+        this.sels.modelSelector.on('change', function () {
+            const me = d3.select(this)
+            const mname = me.property('value')
+            self.uiConf.model(mname);
+            self.uiConf.modelKind(kindmap[mname]);
+            if (kindmap[mname] == tp.ModelKind.Autoregressive) {
+                console.log("RESETTING MASK INDS");
+                self.uiConf.maskInds([])
+            }
+            self.mainInit();
         })
     }
 
@@ -1020,3 +822,5 @@ export class MainGraphic {
         this.render();
     }
 }
+
+

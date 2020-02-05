@@ -16,16 +16,11 @@ interface URLParameters {
     sentence?: string
     model?: string
     modelKind?: string
-    corpus?: string
     layer?: number
     heads?: number[]
     threshold?: number
     tokenInd?: number | 'null'
     tokenSide?: tp.SideOptions
-    metaMatch?: tp.SimpleMeta | null
-    metaMax?: tp.SimpleMeta | null
-    displayInspector?: InspectorOptions
-    offsetIdxs?: number[]
     maskInds?: number[]
     hideClsSep?: boolean
 }
@@ -34,17 +29,21 @@ export class UIConfig {
 
     private _conf: URLParameters = {}
     private _headSet: Set<number>;
-    attType: tp.SentenceOptions;
+    attType: "aa"
     _nHeads: number | null;
     _nLayers: number | null;
     private _token: tp.TokenEvent;
 
     constructor() {
-        this._nHeads = 12; // How do I automate this?
+        this._nHeads = 12; 
         this._nLayers = null;
-        this.attType = 'aa'; // Don't allow this to be modified by the user.
+        this.attType = 'aa'
         this.fromURL()
         this.toURL(false)
+    }
+
+    toURL(updateHistory = false) {
+        URLHandler.updateUrl(this._conf, updateHistory)
     }
 
 
@@ -55,36 +54,17 @@ export class UIConfig {
             model: params['model'] || 'bert-base-cased',
             modelKind: params['modelKind'] || tp.ModelKind.Bidirectional,
             sentence: params['sentence'] || "The girl ran to a local pub to escape the din of her city.",
-            corpus: params['corpus'] || 'woz',
             layer: params['layer'] || 1,
             heads: this._initHeads(params['heads']),
             threshold: params['threshold'] || 0.7,
             tokenInd: params['tokenInd'] || null,
             tokenSide: params['tokenSide'] || null,
             maskInds: params['maskInds'] || [9],
-            metaMatch: params['metaMatch'] || "pos",
-            metaMax: params['metaMax'] || "pos",
-            displayInspector: params['displayInspector'] || null,
-            offsetIdxs: this._initOffsetIdxs(params['offsetIdxs']),
             hideClsSep: truthy(params['hideClsSep']) || true,
         }
 
         this._token = { side: this._conf.tokenSide, ind: this._conf.tokenInd }
 
-    }
-
-    toURL(updateHistory = false) {
-        URLHandler.updateUrl(this._conf, updateHistory)
-    }
-
-    private _initOffsetIdxs(v: (string | number)[] | null) {
-        if (v == null) {
-            return [-1, 0, 1]
-        }
-        else {
-            const numberArr = R.map(toNumber, v);
-            return numberArr;
-        }
     }
 
     private _initHeads(v: number[] | null) {
@@ -237,54 +217,12 @@ export class UIConfig {
         return this
     }
 
-    metaMatch(): tp.SimpleMeta;
-    metaMatch(val: tp.SimpleMeta): this;
-    metaMatch(val?) {
-        if (val == null) return this._conf.metaMax;
-
-        this._conf.metaMax = val;
-        this.toURL();
-        return this;
-    }
-
-    metaMax(): tp.SimpleMeta;
-    metaMax(val: tp.SimpleMeta): this;
-    metaMax(val?) {
-        if (val == null) return this._conf.metaMatch;
-
-        this._conf.metaMatch = val;
-        this.toURL();
-        return this;
-    }
-
     maskInds(): number[];
     maskInds(val: number[]): this;
     maskInds(val?) {
         if (val == null) return this._conf.maskInds;
 
         this._conf.maskInds = val;
-        this.toURL();
-        return this;
-    }
-
-    displayInspector(): InspectorOptions;
-    displayInspector(val: InspectorOptions): this;
-    displayInspector(val?) {
-        if (val == null) return this._conf.displayInspector;
-
-        this._conf.displayInspector = val;
-        this.toURL();
-        return this;
-    }
-
-    offsetIdxs(): number[];
-    offsetIdxs(val: number[]): this;
-    offsetIdxs(val?) {
-        if (val == null) return this._conf.offsetIdxs;
-
-        // convert to numbers
-
-        this._conf.offsetIdxs = R.map(toNumber, val);
         this.toURL();
         return this;
     }
@@ -340,14 +278,5 @@ export class UIConfig {
 
     get matchHistogramDescription() {
         return this.modelKind() == tp.ModelKind.Autoregressive ? "Next" : "Matched"
-    }
-
-    corpus(): string;
-    corpus(val: string): this;
-    corpus(val?) {
-        if (val == null) return this._conf.corpus
-        this._conf.corpus = val
-        this.toURL();
-        return this
     }
 }

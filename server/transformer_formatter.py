@@ -65,9 +65,19 @@ class TransformerOutputFormatter:
         self.topk_probs = topk_probs
         self.model_config = model_config
 
-        self.n_layer = self.model_config.n_layer
-        self.n_head = self.model_config.n_head
-        self.hidden_dim = self.model_config.n_embd
+        try: 
+            # GPT vals
+            self.n_layer = self.model_config.n_layer
+            self.n_head = self.model_config.n_head
+            self.hidden_dim = self.model_config.n_embd
+        except AttributeError:
+            try: 
+                # BERT vals
+                self.n_layer = self.model_config.num_hidden_layers
+                self.n_head = self.model_config.num_attention_heads
+                self.hidden_dim = self.model_config.hidden_size
+            except AttributeError: raise
+
 
         self.__len = len(tokens)# Get the number of tokens in the input
         assert self.__len == self.attentions[0].shape[-1], "Attentions don't represent the passed tokens!"

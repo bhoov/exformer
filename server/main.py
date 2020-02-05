@@ -7,7 +7,6 @@ from flask import render_template, redirect, send_from_directory
 import utils.path_fixes as pf
 from utils.f import ifnone
 
-from data_processing import from_model
 from model_api import get_details
 
 app = connexion.FlaskApp(__name__, static_folder="client/dist", specification_dir=".")
@@ -101,7 +100,7 @@ def get_attentions_and_preds(**request):
     sentence = request["sentence"]
     layer = int(request["layer"])
 
-    deets = details.att_from_sentence(sentence)
+    deets = details.from_sentence(sentence)
 
     payload_out = deets.to_json(layer)
 
@@ -152,14 +151,14 @@ def update_masked_attention(**request):
     mask = payload["mask"]
     layer = int(payload["layer"])
 
-    MASK = details.aligner.mask_token
+    MASK = details.tok.mask_token
     mask_tokens = lambda toks, maskinds: [
         t if i not in maskinds else ifnone(MASK, t) for (i, t) in enumerate(toks)
     ]
 
     token_inputs = mask_tokens(tokens, mask)
 
-    deets = details.att_from_tokens(token_inputs, sentence)
+    deets = details.from_tokens(token_inputs, sentence)
     payload_out = deets.to_json(layer)
 
     return {

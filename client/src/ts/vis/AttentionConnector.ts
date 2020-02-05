@@ -61,11 +61,11 @@ export class AttentionGraph extends VComponent<AttentionData>{
     // Define whether to use the 'j' or 'i' attribute to calculate opacities
     private scaleIdx(): "i" | "j" {
         switch (this.normBy) {
-            case tp.NormBy.Col:
+            case tp.NormBy.COL:
                 return 'j'
-            case tp.NormBy.Row:
+            case tp.NormBy.ROW:
                 return 'i'
-            case tp.NormBy.All:
+            case tp.NormBy.ALL:
                 return 'i'
 
         }
@@ -165,7 +165,7 @@ export class AttentionGraph extends VComponent<AttentionData>{
 
         // Group normalization
         switch (this.normBy){
-            case tp.NormBy.Row:
+            case tp.NormBy.ROW:
                 arr = this.edgeData.extent(1);
                 this.opacityScales = [];
                 arr.forEach((v, i) => {
@@ -176,7 +176,7 @@ export class AttentionGraph extends VComponent<AttentionData>{
                     )
                 })
                 break;
-            case tp.NormBy.Col:
+            case tp.NormBy.COL:
                 arr = this.edgeData.extent(0);
                 this.opacityScales = [];
                 arr.forEach((v, i) => {
@@ -187,7 +187,7 @@ export class AttentionGraph extends VComponent<AttentionData>{
                     )
                 })
                 break;
-            case tp.NormBy.All:
+            case tp.NormBy.ALL:
                 const maxIn = d3.max(this.plotData.map((d) => d.v))
                 for (let i = 0; i < this._data.length; i++) {
                     this.opacityScales.push(d3.scaleLinear()

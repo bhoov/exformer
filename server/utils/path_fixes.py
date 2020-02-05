@@ -5,7 +5,7 @@ FAISS_LAYER_PATTERN = 'layer_*.faiss'
 LAYER_TEMPLATE = 'layer_{:02d}.faiss' 
 
 ROOT_DIR = Path(os.path.abspath(__file__)).parent.parent.parent
-CORPORA = ROOT / "corpora"
+CORPORA = ROOT_DIR / "corpora"
 DATA_DIR = ROOT_DIR / 'server' / 'data'
 DATASET_DIR = Path.home() / 'Datasets'
 ROOT_DIR = Path(os.path.abspath(__file__)).parent.parent.parent

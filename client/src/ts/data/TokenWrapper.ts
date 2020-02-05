@@ -8,12 +8,6 @@ import * as R from 'ramda'
  */
  const emptyFullResponse: tp.FullSingleTokenInfo[] = [{
      text: '[SEP]',
-     embeddings: [],
-     contexts: [],
-     bpe_token: '',
-     bpe_pos: '',
-     bpe_dep: '',
-     bpe_is_ent: null,
      topk_words: [],
      topk_probs: []
  }]

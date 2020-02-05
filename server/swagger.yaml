@@ -32,7 +32,7 @@ paths:
   /attend+meta:
     get:
       tags: [All]
-      operationId: main.get_attention_and_meta
+      operationId: main.get_attentions_and_preds
       summary: Get the attention information, BERT Embeddings, and spacy meta info for an input sentence
       parameters:
         - name: model
@@ -66,81 +66,6 @@ paths:
         200:
           description: Update BERT's masked behavior for passed tokens
 
-  /k-nearest-embeddings:
-    get:
-      tags: [All]
-      operationId: main.nearest_embedding_search
-      summary: Search for the nearest embeddings to a token sent from the frontend by layer
-      parameters:
-        - name: model
-          description: Which model to get information from
-          in: query
-          type: string
-        - name: corpus
-          description: Which corpus to search
-          in: query
-          type: string
-        - name: embedding
-          description: Query vector on which to search the dataset
-          in: query
-          type: array
-          items:
-              type: number
-        - name: layer
-          description: Which layer to search the nearest for
-          in: query
-          type: number
-        - name: heads
-          description: List of heads to search for
-          in: query
-          type: array
-          items:
-            type: number
-        - name: k
-          description: How many nearest neighbors to grab
-          in: query
-          type: number
-      responses:
-        200:
-          description: Return related embeddings and associated metadata
-
-  /k-nearest-contexts:
-    get:
-      tags: [All]
-      operationId: main.nearest_context_search
-      summary: Search for the nearest embeddings BY SELECTED HEADS to a token sent from the frontend by layer
-      parameters:
-        - name: model
-          description: Which model to get information from
-          in: query
-          type: string
-        - name: corpus
-          description: Which corpus to search
-          in: query
-          type: string
-        - name: context
-          description: Query vector on which to search the dataset
-          in: query
-          type: array
-          items:
-              type: number
-        - name: layer
-          description: Which layer to search the nearest for
-          in: query
-          type: number
-        - name: heads
-          description: List of heads to search for
-          in: query
-          type: array
-          items:
-            type: number
-        - name: k
-          description: How many nearest neighbors to grab
-          in: query
-          type: number
-      responses:
-        200:
-          description: Return related embeddings by that head and the associated metadata
 
 definitions:
   maskPayload:

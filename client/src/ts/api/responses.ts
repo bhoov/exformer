@@ -17,7 +17,3 @@ export interface ModelDetailResponse extends BaseResponse {
 export interface AttentionDetailsResponse extends BaseResponse {
     payload: tp.AttentionResponse
 }
-
-export interface NearestNeighborResponse extends BaseResponse {
-    payload: tp.FaissSearchResults[]
-}
