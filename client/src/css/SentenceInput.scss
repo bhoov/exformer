@@ -2,8 +2,9 @@
 #sentence-input {
     margin-bottom: 0px;
     margin-right: 0px;
-    margin-left: 10px;
+    //margin-left: 10px;
     width: 100%;
+
 
     form {
         display: flex;
@@ -17,9 +18,9 @@
 
             input {
                 // flex-grow: 3;
-                width: 50%;
-                max-width: 700px;
-                margin-right: 5%;
+                width: 100%;
+                //max-width: 700px;
+                //margin-right: 5%;
             }
         }
 
