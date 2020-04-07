@@ -15,4 +15,5 @@ dependencies:
   - numpy
   - pytorch
   - torchvision
-  - transformers>=2.4.1
+  - pip:
+    - transformers>=2.8.0
