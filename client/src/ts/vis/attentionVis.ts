@@ -553,7 +553,6 @@ export class MainGraphic {
         const leftAttInfo = getAttentionInfo(focusAtt, heads, "left", token);
         //@ts-ignore
         const rightAttInfo = getAttentionInfo(focusAtt, heads, "right", token);
-        this.vizs.leftHeads.options.offset = this.uiConf.offset
         this.vizs.leftHeads.update(leftAttInfo)
         this.vizs.rightHeads.update(rightAttInfo)
         this._renderHeadSummary();
@@ -572,8 +571,6 @@ export class MainGraphic {
         const left = this.tokCapsule[this.uiConf.attType[0]]
         const right = this.tokCapsule[this.uiConf.attType[1]]
 
-        console.log("now: ", this.uiConf.offset);
-        this.vizs.tokens.left.options.offset = this.uiConf.offset
         this.vizs.tokens.left.update(left.tokenData);
         this.vizs.tokens.left.mask(left.maskInds);
         this.vizs.tokens.right.update(right.tokenData);
@@ -583,7 +580,6 @@ export class MainGraphic {
 
     renderSvg() {
         const att = this.attCapsule.byHeads(this.uiConf.heads())
-        this.vizs.attentionSvg.options.offset = this.uiConf.offset
         const svg = <AttentionGraph>this.vizs.attentionSvg.data(att);
         svg.update(att)
         const maxTokens = _.max([this.tokCapsule.a.length()])

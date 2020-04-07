@@ -53,7 +53,7 @@ class ModelDetails:
         bost = self.tok.bos_token_id
         clst = self.tok.cls_token_id
         sept = self.tok.sep_token_id
-        if (bost is not None) and (bost != clst)and add_special_tokens:
+        if (bost is not None) and (bost != clst) and add_special_tokens:
             ids.insert(0, bost)
 
         inputs = self.tok.prepare_for_model(ids, add_special_tokens=add_special_tokens, return_tensors="pt")
