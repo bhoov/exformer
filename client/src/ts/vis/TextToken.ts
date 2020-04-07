@@ -71,7 +71,6 @@ export abstract class TextTokens extends VComponent<tp.FullSingleTokenInfo[]>{
 
     makePopup() {
         const divOps = this.divOps
-        console.log("Calling divhover");
         this.divHover = new DivHover(this.parent, this.eventHandler, divOps)
     }
 

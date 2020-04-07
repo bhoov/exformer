@@ -37,6 +37,7 @@ export interface DivHoverOpts {
     backgroundColor: string
     fontSize: number
     title: string
+    autoVisibility: boolean
 }
 
 export interface DivHoverSels {
@@ -65,6 +66,7 @@ export class DivHover extends VComponent<DI>{
         backgroundColor: 'rgba(200, 200, 200, 0.93)',
         fontSize: 14,
         title: "", // HTML string to serve as a title for the div
+        autoVisibility: true, // Use a function to trigger visible and hidden rather based on parent
     }
 
     _current = {
@@ -151,6 +153,14 @@ export class DivHover extends VComponent<DI>{
         return this
     }
 
+    hide() {
+        this.base.style('visibility', 'hidden')
+    }
+
+    show() {
+        this.base.style('visibility', 'visible')
+    }
+
     _init() {
         const op = this.options
         const sels = this.sels
@@ -184,10 +194,10 @@ export class DivHover extends VComponent<DI>{
                 .style('height', `${op.height}px`)
         })
         sels.parent.on('mouseout', function() {
-            self.base.style('visibility', 'hidden')
+            op.autoVisibility && self.base.style('visibility', 'hidden')
         })
         sels.parent.on('mouseover', function() {
-            self.base.style('visibility', 'visible')
+            op.autoVisibility && self.base.style('visibility', 'visible')
         })
 
     // pointer-events: none;

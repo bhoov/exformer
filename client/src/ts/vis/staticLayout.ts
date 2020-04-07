@@ -135,15 +135,15 @@ export function createStaticSkeleton(base: D3Sel) {
                     </div>
                 </div>
                 <div id="atn-container" class="text-center">
-                    <div id="head-info-box"
-                         class="mat-hover-display text-center"
-                         style="width: 70px; height: 30px; visibility: hidden; left: 929px; top: 670px; border-radius: 8px 8px 8px 1px;">
-                    </div>
+                    <div id="left-att-head-div">
                     <svg id="left-att-heads" width="182" height="442"></svg>
+                    </div>
                     <div id="left-tokens"></div>
                     <svg id="atn-display" height="442" width="200"></svg>
                     <div id="right-tokens"></div>
+                    <div id="right-att-head-div">
                     <svg id="right-att-heads" width="182" height="442"></svg>
+                    </div>
                 </div>
                 <div id="vis-break"></div>
             </div>
@@ -187,7 +187,6 @@ export function createStaticSkeleton(base: D3Sel) {
      * For main attention vis
      */
 
-    const headInfoBox = base.select('#head-info-box');
     const headBoxLeft = base.select('#left-att-heads');
     const tokensLeft = base.select('#left-tokens');
     const atnDisplay = base.select('#atn-display');
@@ -205,7 +204,6 @@ export function createStaticSkeleton(base: D3Sel) {
         atnHeads: {
             left: headBoxLeft,
             right: headBoxRight,
-            headInfo: headInfoBox
         },
         form: {
             sentenceA: sentenceA,

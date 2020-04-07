@@ -151,17 +151,14 @@ export class MainGraphic {
                     postResponseDisplayCleanup()
                 }
 
+                let predictHoverTitle = this.uiConf.modelKind() == tp.ModelKind.Autoregressive ? "Would predict next..." : "Would predict here..."
+                self.vizs.tokens.left.divHover.title(predictHoverTitle)
+                self.vizs.tokens.right.divHover.title(predictHoverTitle)
                 if (this.uiConf.modelKind() == tp.ModelKind.Autoregressive) {
                     // Ensure only 1 mask ind is present for autoregressive models
                     if (this.uiConf.hasToken()) {
                         this.grayToggle(<number>this.uiConf.token().ind)
                     }
-                    self.vizs.tokens.left.options.divHover.textInfo = "Would predict next..."
-                    self.vizs.tokens.right.options.divHover.textInfo = "Would predict next..."
-                }
-                else {
-                    self.vizs.tokens.left.options.divHover.textInfo = "Would predict here..."
-                    self.vizs.tokens.right.options.divHover.textInfo = "Would predict here..."
                 }
 
                 this.sels.body.style("cursor", "default")
@@ -237,13 +234,10 @@ export class MainGraphic {
 
 
         this.eventHandler.bind(AttentionHeadBox.events.rowMouseOver, (e: tp.HeadBoxEvent) => {
-            self.sels.atnHeads.headInfo.style('visibility', 'visible')
         })
 
 
         this.eventHandler.bind(AttentionHeadBox.events.rowMouseOut, () => {
-            self.sels.atnHeads.headInfo.style('visibility', 'hidden')
-            // Don't do anything special on row mouse out
         })
 
         this.eventHandler.bind(AttentionHeadBox.events.boxMouseOver, (e: tp.HeadBoxEvent) => {
@@ -262,30 +256,6 @@ export class MainGraphic {
         })
 
         this.eventHandler.bind(AttentionHeadBox.events.boxMouseMove, (e) => {
-            const headInfo = self.sels.atnHeads.headInfo
-            let left, top, borderRadius
-
-            if (e.side == "left") {
-                const divOffset = [12, 3]
-                left = e.mouse[0] + e.baseX - (+headInfo.style('width').replace('px', '') + divOffset[0])
-                top = e.mouse[1] + e.baseY - (+headInfo.style('height').replace('px', '') + divOffset[1])
-                borderRadius = "8px 8px 1px 8px"
-            }
-            else {
-                const divOffset = [-13, 3]
-                left = e.mouse[0] + e.baseX + divOffset[0]
-                top = e.mouse[1] + e.baseY - (+headInfo.style('height').replace('px', '') + divOffset[1])
-                borderRadius = "8px 8px 8px 1px"
-            }
-
-            headInfo
-                .style('visibility', 'visible')
-                .style('left', String(left) + 'px')
-                .style('top', String(top) + 'px')
-                .style('border-radius', borderRadius)
-                .text(`Head: ${e.ind + 1}`)
-
-            // Don't do anything special on row mouse over
         })
 
         this.eventHandler.bind(AttentionHeadBox.events.boxClick, (e: { head }) => {
