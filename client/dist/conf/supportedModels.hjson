@@ -1,3 +1,4 @@
+/* This HJSON file type was chosen because it is a JSON that allows comments, and is more relaxed about syntax (trailing commas in lists allowed) */
 { models: [
     { name: "bert-base-cased", kind: "bidirectional" },
     { name: "bert-large-uncased", kind: "bidirectional" },

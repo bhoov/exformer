@@ -18,3 +18,4 @@ dependencies:
   - torchvision
   - pip:
     - transformers>=2.8.0
+    - hjson
