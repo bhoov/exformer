@@ -54,7 +54,7 @@ export class UIConfig {
             model: params['model'] || 'bert-base-cased',
             modelKind: params['modelKind'] || tp.ModelKind.Bidirectional,
             sentence: params['sentence'] || "The girl ran to a local pub to escape the din of her city.",
-            layer: params['layer'] || 1,
+            layer: params['layer'] || 0,
             heads: this._initHeads(params['heads']),
             threshold: params['threshold'] || 0.7,
             tokenInd: params['tokenInd'] || null,

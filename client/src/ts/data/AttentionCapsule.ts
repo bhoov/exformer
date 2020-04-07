@@ -30,8 +30,6 @@ export class AttentionWrapper {
 
     badToks:[number[], number[]] // Indexes for the CLS and SEP tokens
     isZeroed: boolean
-    nLayers = 12;
-    nHeads = 12;
 
     constructor(att:number[][][], badToks:[number[], number[]]=[[],[]], isZeroed=true){
         this.init(att, badToks, isZeroed)

@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { VComponent } from "./VisComponent";
 import { SimpleEventHandler } from "../etc/SimpleEventHandler";
+import { DivHover, DivHoverOpts, PointsTo } from "./DivHover"
 import { D3Sel } from "../etc/Util";
 import { SVG } from "../etc/SVGplus"
 import * as tf from '@tensorflow/tfjs'
@@ -100,6 +101,15 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
     headCells: D3Sel;
     opacityScale: d3.ScaleLinear<any, any>;
 
+    hoverOps: Partial<DivHoverOpts> = { 
+        height: 30,
+        width: 70,
+        pointsTo: PointsTo.BottomRight,
+        autoVisibility: false
+    }
+
+    divHover: DivHover
+
     constructor(d3Parent: D3Sel, eventHandler?: SimpleEventHandler, options: {} = {}) {
         super(d3Parent, eventHandler);
         this.superInitSVG(options);
@@ -110,6 +120,7 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
         this.headRows = this.base.selectAll(`.${this.rowCssName}`)
         this.headCells = this.headRows.selectAll(`${this.boxCssName}`)
         this.opacityScale = d3.scaleLinear().range([0, 1]);
+        this.divHover = new DivHover(d3.select(this.parent.node().parentNode), this.eventHandler, this.hoverOps) // Because the parent is an SVG, we need to get the containing div
     }
 
     private updateCurrent(): Partial<CurrentOptions> {
@@ -142,6 +153,12 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
         cur.totalHeight = (op.boxDim * (this._data.rows.length + op.offset));
 
         return this._current
+    }
+    
+    makeHtmlForPopup(h: number) {
+        const out = `<b>Head:</b> ${h}` // Increment by 1 for display
+        console.log(out);
+        return out
     }
 
     private updateData() {
@@ -196,10 +213,13 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
                 opacity: (d: number) => this.opacityScale(d),
                 fill: "blue"
             })
-            .on("mouseover", (d, i) => {
+            .on("mouseover", (d:number, i) => {
+                self.divHover.html(self.makeHtmlForPopup(i + 1))
+                self.divHover.show()
                 self.eventHandler.trigger(AttentionHeadBox.events.boxMouseOver, boxEvent(i))
             })
             .on("mouseout", (d, i) => {
+                self.divHover.hide()
                 self.eventHandler.trigger(AttentionHeadBox.events.boxMouseOut, boxEvent(i))
             })
             .on("click", (d, i) => {
