@@ -108,7 +108,8 @@ module.exports = {
         }),
         new CopyWebpackPlugin([
             {from: 'img', to: 'img'},
-            {from: "demo", to:"demo"}
+            {from: "demo", to:"demo"},
+            {from: "conf", to:"conf"}
         ]),
     ],
     optimization: {

@@ -1,15 +1,14 @@
+import * as d3 from 'd3'
 import * as tp from "./etc/types"
 import * as x_ from "./etc/_Tools"
 import * as _ from "lodash"
 import * as R from 'ramda'
 import { URLHandler } from "./etc/URLHandler";
+import * as hjson from 'hjson'
 
 const falsey = val => (new Set(['false', 0, "no", false, null, ""])).has(val)
 const truthy = val => !falsey(val)
 const toNumber = x => +x;
-
-
-type InspectorOptions = "context" | "embeddings" | null
 
 // Must be optional params for initializations
 interface URLParameters {
@@ -33,13 +32,23 @@ export class UIConfig {
     _nHeads: number | null;
     _nLayers: number | null;
     private _token: tp.TokenEvent;
+    supportedModels:tp.ModelConfig[]
 
     constructor() {
-        this._nHeads = 12; 
+        this._nHeads = 12;
         this._nLayers = null;
         this.attType = 'aa'
         this.fromURL()
         this.toURL(false)
+
+        const self = this
+        d3.text("conf/supportedModels.hjson").then(txt => {
+            console.log(txt);
+            const out = hjson.parse(txt)
+            console.log("Config HJSON: ", out);
+            self.supportedModels = out.models
+            return out.models
+        })
     }
 
     toURL(updateHistory = false) {

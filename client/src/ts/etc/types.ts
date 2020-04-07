@@ -11,6 +11,11 @@ export type ModelInfo = {
     nheads: number
 }
 
+export type ModelConfig = {
+    name: string
+    kind: ModelKind
+}
+
 
 /**
  * ATTENTION RESULTS FROM BACKEND
