@@ -20,6 +20,7 @@ import { D3Sel, Sel } from '../etc/Util';
 import { from, fromEvent } from 'rxjs'
 import { switchMap, map, tap } from 'rxjs/operators'
 import { BaseType } from "d3";
+import {createStaticSkeleton} from "./staticLayout";
 
 
 function isNullToken(tok: tp.TokenEvent) {
@@ -67,197 +68,6 @@ function setSelDisabled(attr: boolean, sel: D3Sel) {
     sel.attr('disabled', val)
 }
 
-function createStaticSkeleton(base: D3Sel) {
-
-    /**
-     * Top level sections
-     */
-    const sentenceInput = base.append('div')
-        .attr("id", "sentence-input")
-
-    const connectorContainer = base.append('div')
-        .attr('id', 'connector-container')
-
-    const atnControls = connectorContainer.append('div')
-        .attr("id", "connector-controls")
-
-    const atnContainer = connectorContainer.append('div')
-        .attr("id", "atn-container")
-        .classed("text-center", true)
-
-    /**
-     * Sentence Input
-     */
-
-    const formGroup = sentenceInput.append('form')
-        .append('div').classed('form-group', true)
-
-        formGroup.append('label')
-            .attr('for', "form-sentence-a")
-            .text(' Input Sentence ')
-
-        const sentenceA = formGroup.append('input')
-            .attr('id', 'form-sentence-a')
-            .attr('type', 'text')
-            .attr('name', 'sent-a-input')
-
-    sentenceInput.append('div')
-        .classed('padding', true)
-    
-    const formButton = sentenceInput.append('button')
-        .attr('class', 'btn btn-primary')
-        .attr('id', "update-sentence")
-        .attr('type', 'button')
-
-        formButton.text("Update")
-
-    /**
-     * Connector Controls
-     */
-     const leftControlHalf = atnControls.append('div')
-        .classed('left-control-half', true)
-
-     const rightControlHalf = atnControls.append('div')
-        .attr('class', 'right-control-half head-control')
-
-        const modelSelection = leftControlHalf.append('div')
-            .attr('id', 'model-selection')
-
-            modelSelection.append('label')
-                .attr('for', 'model-options').text('Select model')
-
-            const modelSelector = modelSelection.append('select')
-                .attr('id', 'model-option-selector')
-                .attr('name', 'model-options')
-        
-        const slideContainer = leftControlHalf.append('div')
-            .classed('slide-container', true)
-
-            slideContainer.append('label')
-                .attr('for', 'my-range')
-                .html("Display top <span id=\"my-range-value\">...</span>% of attention")
-
-            const threshSlider = slideContainer.append('input')
-                .attr('type', 'range')
-                .attr('min', '0')
-                .attr('max', '100')
-                .attr('value', '70')
-                .classed('slider', true)
-                .attr('id', 'my-range')
-
-        const layerSelection = leftControlHalf.append('div')
-            .attr('id', 'layer-selection')
-
-            layerSelection.append('div')
-                .classed('input-description', true)
-                .text("Layer: ")
-
-            const layerCheckboxes = layerSelection.append('div')
-                .attr('class', 'layer-select btn-group btn-group-toggle')
-                .attr('data-toggle', 'buttons')
-                .attr('id', 'layer-select')
-
-        const clsToggle = leftControlHalf.append('div')
-            .attr('id', 'cls-toggle')
-
-            clsToggle.append('div')
-                .attr('class', 'input-description')
-                .text("Hide Special Tokens")
-
-            const clsSwitch = clsToggle.append('label')
-                .attr('class', 'switch')
-
-                clsSwitch.append('input').attr('type', 'checkbox')
-                    .attr('checked', 'checked')
-                
-                clsSwitch.append('span')
-                    .attr('class', 'short-slider round')
-
-    const selectedHeadDiv = rightControlHalf.append('div')
-        .attr('id', 'selected-head-display')
-
-        selectedHeadDiv.append('div')
-            .classed('input-description', true)
-            .text('Selected heads:')
-
-        const selectedHeads = selectedHeadDiv.append('div').attr('id', 'selected-heads')
-
-    const headButtons = rightControlHalf.append('div')
-        .classed('select-input', true)
-        .attr('id', 'head-all-or-none')
-
-        const headSelectAll = headButtons.append('button').attr('id', 'select-all-heads').text("Select all heads")
-        const headSelectNone = headButtons.append('button').attr('id', 'select-no-heads').text("Unselect all heads")
-
-    const infoContainer = rightControlHalf.append('div')
-        .attr('id', 'usage-info')
-
-        infoContainer.append('p').html("You focus on one token by <b>click</b>.<br /> You can mask any token by <b>double click</b>.")
-        infoContainer.append('p').html("You can select and de-select a head by a <b>click</b> on the heatmap columns")
-
-    connectorContainer.append('div').attr('id', 'vis-break')
-
-    /**
-     * For main attention vis
-     */
-
-    const headInfoBox = atnContainer.append('div')
-        .attr('id', "head-info-box")
-        .classed('mat-hover-display', true)
-        .classed('text-center', true)
-        .style('width', String(70) + 'px')
-        .style('height', String(30) + 'px')
-        .style('visibillity', 'hidden')
-
-    const headBoxLeft = atnContainer.append('svg')
-        .attr('id', 'left-att-heads')
-
-    const tokensLeft = atnContainer.append('div')
-        .attr("id", "left-tokens")
-
-    const atnDisplay = atnContainer.append('svg')
-        .attr("id", "atn-display")
-
-    const tokensRight = atnContainer.append('div')
-        .attr("id", "right-tokens")
-
-    const headBoxRight = atnContainer.append('svg')
-        .attr('id', 'right-att-heads')
-
-    /**
-     * Return an object that provides handles to the important parts here
-     */
-
-    const pctSpan = base.select("#my-range-value")
-
-    const sels = {
-        body: d3.select('body'),
-        atnContainer: atnContainer,
-        atnDisplay: atnDisplay,
-        atnHeads: {
-            left: headBoxLeft,
-            right: headBoxRight,
-            headInfo: headInfoBox
-        },
-        form: {
-            sentenceA: sentenceA,
-            button: formButton
-        },
-        tokens: {
-            left: tokensLeft,
-            right:  tokensRight
-        },
-        modelSelector: modelSelector,
-        clsToggle: clsToggle,
-        layerCheckboxes: layerCheckboxes,
-        selectedHeads: selectedHeads,
-        headSelectAll: headSelectAll,
-        headSelectNone: headSelectNone,
-        threshSlider: threshSlider,
-    }
-    return sels
-}
-
 export class MainGraphic {
     base: D3Sel
     api: API
@@ -269,7 +79,7 @@ export class MainGraphic {
     eventHandler: SimpleEventHandler    // Orchestrates events raised from components
 
     /**
-     * 
+     *
      * @param base 'div' html element into which everything below will be rendered
      */
     constructor(baseDiv: Element) {
