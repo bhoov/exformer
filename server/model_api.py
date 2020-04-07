@@ -50,11 +50,9 @@ class ModelDetails:
         ids = self.tok.convert_tokens_to_ids(tokens)
 
         # For GPT2, add the beginning of sentence token to the input. Note that this will work on all models but XLM
-        bost = self.tok.bos_token_id
-        clst = self.tok.cls_token_id
-        sept = self.tok.sep_token_id
 
-        if 'gpt' in self.mname:
+        if 'gpt' in self.mname and add_special_tokens:
+            bost = self.tok.bos_token_id
             ids.insert(0, bost)
 
         inputs = self.tok.prepare_for_model(ids, add_special_tokens=add_special_tokens, return_tensors="pt")
