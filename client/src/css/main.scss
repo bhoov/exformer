@@ -5,20 +5,94 @@
 @import "SentenceInput";
 @import "AttentionConnectorControls";
 
+@import "ui";
+
 body {
-  font-family: 'IBM Plex Sans';
+  font-family: 'IBM Plex Sans', sans-serif;
+  height: 100%;
+}
+
+.btn-primary{
+  background-color: #2196f3;
+  border: none;
+  //border-radius: 0px;
+}
+
+.exbert-container {
+  position: fixed;
+  bottom: 0;
+  top: 45px;
+  width: 100%;
+  overflow: auto;
+}
+
+#attention-vis {
   margin-left: auto;
   margin-right: auto;
   width: 80%;
-  max-width: 1500px;
+  max-width: 1000px;
+  // Small devices (landscape phones, less than 768px)
+  @media (max-width: 768px) {
+    width: 100%
+  }
 }
+
+
+.no-small-dev {
+  @media (max-width: 767.98px) {
+    display: none!important;
+  }
+}
+
+.only-small-dev {
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+.small-full{
+  display: inline-block;
+  @media (max-width: 575.98px) {
+    display: block;
+    width:100%;
+  }
+}
+
+
+/*****************************************
+* some some responsive adjustments
+******************************************/
+
+//// Extra small devices (portrait phones, less than 576px)
+//@media (max-width: 575.98px) {
+//
+//}
+//
+//// Small devices (landscape phones, less than 768px)
+//@media (max-width: 767.98px) {
+//  body {
+//    width: 100%;
+//  }
+//}
+
+//
+//// Medium devices (tablets, less than 992px)
+//@media (max-width: 991.98px) {
+//  ...
+//}
+//
+//// Large devices (desktops, less than 1200px)
+//@media (max-width: 1199.98px) {
+//  ...
+//}
+
 
 .layerCheckbox {
   background-color: lightgrey;
   padding-left: 8px;
   padding-right: 8px;
 
-  &.active{
+  &.active {
     color: #fff;
     background-color: #6c7067;
   }
@@ -45,32 +119,45 @@ label {
   background-color: lightgray;
   height: 40px;
   margin-bottom: 5px;
+  text-align: center;
+  position: fixed;
+  top: 0;
 
-  .header-logo{
+  .header-logo {
     height: 20px;
-    display:inline-block;
+    display: inline-block;
     margin-left: 10px;
     margin-top: 5px;
     margin-bottom: 5px;
+    float: left;
   }
-  .header-info{
+
+  .header-info {
     font-size: 9pt;
     height: 30px;
-    display:inline-block;
-    float:right;
+    display: inline-block;
+    float: right;
     margin-right: 10px;
     margin-top: 10px;
     //margin-bottom: 5px;
   }
 
 
-  #headertext{
-    text-align: center ;
+  #headertext {
+    //text-align: center;
     display: inline-block;
     font-size: 18px;
-    margin-left: 30%;
+    //margin-left: 30%;
+    margin-left: auto;
+    margin-right: auto;
     margin-top: 5px;
     margin-bottom: 5px;
+
+    // Extra small devices (portrait phones, less than 576px)
+    @media (max-width: 575.98px) {
+      display: none;
+    }
+
   }
 }
 
@@ -89,6 +176,7 @@ label {
 
 #corpus-querying {
   display: inline-block;
+
   .btn {
     display: inline-block;
   }
@@ -105,13 +193,14 @@ label {
 }
 
 #connector-container {
-  .mat-hover-display{
+  .mat-hover-display {
     pointer-events: none;
     display: block;
     position: absolute;
     visibility: hidden;
     background-color: rgba(200, 200, 200, 0.93);
     font-size: 14px;
+
     p {
       margin: 4px 1px 1px 4px;
       // margin: auto;
@@ -120,13 +209,13 @@ label {
 }
 
 .right-token-hover {
-    border-radius: 1px 8px 8px 8px;
-    text-align: left;
+  border-radius: 1px 8px 8px 8px;
+  text-align: left;
 }
 
 .left-token-hover {
-    border-radius: 8px 1px 8px 8px;
-    text-align: right;
+  border-radius: 8px 1px 8px 8px;
+  text-align: right;
 }
 
 .next-token {
