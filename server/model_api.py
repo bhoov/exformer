@@ -49,7 +49,7 @@ class ModelDetails:
         """
         ids = self.tok.convert_tokens_to_ids(tokens)
 
-        print("RUNNING TOKENS")
+        print("\n\nRUNNING TOKENS FOR SENTENCE\n", orig_sentence, "\n", tokens, "\n\n")
 
         # For GPT2, add the beginning of sentence token to the input. Note that this will work on all models but XLM
 
