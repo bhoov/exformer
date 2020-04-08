@@ -1,31 +1,31 @@
-
-#sentence-input {
-    margin-bottom: 0px;
-    margin-right: 0px;
-    //margin-left: 10px;
-    width: 100%;
-
-
-    form {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        justify-content: space-evenly;
-        align-items: center;
-
-        .form-group {
-            flex-grow: 3;
-
-            input {
-                // flex-grow: 3;
-                width: 100%;
-                //max-width: 700px;
-                //margin-right: 5%;
-            }
-        }
-
-        .btn {
-            flex-grow: 1;
-        }
-    }
-}
+//
+//#sentence-input {
+//    margin-bottom: 0px;
+//    margin-right: 0px;
+//    //margin-left: 10px;
+//    width: 100%;
+//
+//
+//    form {
+//        display: flex;
+//        flex-direction: row;
+//        flex-wrap: nowrap;
+//        justify-content: space-evenly;
+//        align-items: center;
+//
+//        .form-group {
+//            flex-grow: 3;
+//
+//            input {
+//                // flex-grow: 3;
+//                width: 100%;
+//                //max-width: 700px;
+//                //margin-right: 5%;
+//            }
+//        }
+//
+//        .btn {
+//            flex-grow: 1;
+//        }
+//    }
+//}

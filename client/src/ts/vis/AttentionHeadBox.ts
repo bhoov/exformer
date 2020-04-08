@@ -16,7 +16,7 @@ export type AttentionHeadBoxI = {
 
 /**
  * From an attention matrix selected by layer, show a summary of the attentions belonging to each head.
- * 
+ *
  * @param headMat The matrix representing all the attentions by head (layer already selected) <head, from, to>
  * @param headList The heads that are selected
  * @param side Is this the right or the left display?
@@ -36,7 +36,7 @@ export function getAttentionInfo(headMat: number[][][], headList: number[], side
     let dim = null
     // Only change the attention graph opposite selected token
     if (token != null && (token.side != side)) {
-        dim = token.side == "left" ? -2 : -1 // Assign to "from" direction if "left" 
+        dim = token.side == "left" ? -2 : -1 // Assign to "from" direction if "left"
     }
 
     let axis: number = side == "left" ? 2 : 1;
@@ -101,7 +101,7 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
     headCells: D3Sel;
     opacityScale: d3.ScaleLinear<any, any>;
 
-    hoverOps: Partial<DivHoverOpts> = { 
+    hoverOps: Partial<DivHoverOpts> = {
         height: 30,
         width: 70,
         pointsTo: PointsTo.BottomRight,
@@ -154,10 +154,10 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
 
         return this._current
     }
-    
+
     makeHtmlForPopup(h: number) {
         const out = `<b>Head:</b> ${h}` // Increment by 1 for display
-        console.log(out);
+        // console.log(out);
         return out
     }
 
