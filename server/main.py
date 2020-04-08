@@ -1,44 +1,50 @@
 import argparse
 import numpy as np
-import connexion
-from flask_cors import CORS
-from flask import render_template, redirect, send_from_directory
+from fastapi import FastAPI
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import uvicorn
+
+import api
 
 import utils.path_fixes as pf
 from utils.f import ifnone
-
 from model_api import get_details
 
-app = connexion.FlaskApp(__name__, static_folder="client/dist", specification_dir=".")
-flask_app = app.app
-CORS(flask_app)
-
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--debug", action="store_true", help=" Debug mode")
-parser.add_argument("--port", default=5051, help="Port to run the app. ")
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Flask main routes
-@app.route("/")
-def hello_world():
-    return redirect("client/exBERT.html")
+@app.get("/")
+def index():
+    return RedirectResponse(url="serve/exBERT.html")
 
-# send everything from client as static content
-@app.route("/client/<path:path>")
-def send_static_client(path):
-    """ serves all files from ./client/ to ``/client/<path:path>``
+# the `file_path:path` says to accept any path as a string here. Otherwise, `file_paths` containing `/` will not be served properly
+@app.get("/serve/{file_path:path}")
+def send_static_client(file_path:str):
+    """ Serves (makes accessible) all files from ./client/ to ``/serve/{path}``
 
-    :param path: path from api call
+    Args:
+        path: Name of file in the client directory
     """
-    return send_from_directory(str(pf.CLIENT_DIST), path)
+    print(f"\n\nPath: {file_path}")
+    f = str(pf.CLIENT_DIST / file_path)
+    print("Finding file: ", f)
+    return FileResponse(f)
 
-# ======================================================================
-## CONNEXION API ##
-# ======================================================================
-def get_model_details(**request):
+@app.get("/api/get-model-details")
+def get_model_details(model:str):
     """Get important information about a model, like the number of layers and heads
     
     Args:
-        request['model']: The model name
+        mname: The name of the model to look up the config for
 
     Returns:
         {
@@ -49,8 +55,7 @@ def get_model_details(**request):
             }
         }
     """
-    mname = request['model']
-    deets = get_details(mname)
+    deets = get_details(model)
 
     info = deets.config
     nlayers = info.num_hidden_layers
@@ -66,7 +71,8 @@ def get_model_details(**request):
         "payload": payload_out,
     }
 
-def get_attentions_and_preds(**request):
+@app.get("/api/attend-with-meta")
+def get_attentions_and_preds(model:str, sentence:str, layer:int):
     """For a sentence, at a layer, get the attentions and predictions
     
     Args:
@@ -94,14 +100,8 @@ def get_attentions_and_preds(**request):
             }
         }
     """
-    model = request["model"]
     details = get_details(model)
-
-    sentence = request["sentence"]
-    layer = int(request["layer"])
-
     deets = details.from_sentence(sentence)
-
     payload_out = deets.to_json(layer)
 
     return {
@@ -109,7 +109,8 @@ def get_attentions_and_preds(**request):
         "payload": payload_out
     }
 
-def update_masked_attention(**request):
+@app.post("/api/update-mask")
+def update_masked_attention(payload:api.MaskUpdatePayload):
     """From tokens and indices of what should be masked, get the attentions and predictions
     
     payload = request['payload']
@@ -141,15 +142,13 @@ def update_masked_attention(**request):
             }
         }
     """
-    payload = request["payload"]
+    model = payload.model
+    tokens = payload.tokens
+    sentence = payload.sentence
+    mask = payload.mask
+    layer = payload.layer
 
-    model = payload['model']
     details = get_details(model)
-
-    tokens = payload["tokens"]
-    sentence = payload["sentence"]
-    mask = payload["mask"]
-    layer = int(payload["layer"])
 
     MASK = details.tok.mask_token
     mask_tokens = lambda toks, maskinds: [
@@ -166,14 +165,8 @@ def update_masked_attention(**request):
         "payload": payload_out,
     }
 
-app.add_api("swagger.yaml")
-
-# Setup code
 if __name__ != "__main__":
-    print("SETTING UP ENDPOINTS")
-
-# Then deploy app
+    print("Initializing as the main script") # Is never printed
 else:
-    args, _ = parser.parse_known_args()
-    print("Initiating app")
-    app.run(port=args.port, use_reloader=False, debug=args.debug)
+    # This file is not run as __main__ in the uvicorn environment
+    uvicorn.run(app, host='127.0.0.1', port=8000)
