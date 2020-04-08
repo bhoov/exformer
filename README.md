@@ -39,7 +39,9 @@ And then connect to it in the running application with:
 
 `ray.init(address="auto", redis_password="PASSWORD", ignore_reinit_error=True)`
 
-where `PASSWORD` is the password that you are given by the `ray start` command on first startup. This has a smart default as the host defaults to `localhost`
+where `PASSWORD` is the password that you are given by the `ray start` command on first startup. This has a smart default as the host defaults to `localhost`.
+
+To stop the running backend processes, call `ray stop`.
 
 ## Frontend
 The compiled versions of the frontend are already included in the `client/dist` folder. You can get setup to develop on the frontend by the following:
