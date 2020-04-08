@@ -49,3 +49,5 @@ The compiled versions of the frontend are already included in the `client/dist` 
 3. `npm run watch`
 
 This will allow you to change the typescript files and see the changes in your browser on refresh.
+
+You can interact with the api by going to `http://HOST:PORT/docs`
