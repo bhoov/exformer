@@ -3,7 +3,7 @@
     { name: "bert-base-cased", kind: "bidirectional" },
     { name: "bert-large-uncased", kind: "bidirectional" },
     { name: "bert-base-german-cased", kind: "bidirectional" },
-    { name: "bert-large-cased-whole-word-masking", kind: "bidirectional" },
+    // { name: "bert-large-cased-whole-word-masking", kind: "bidirectional" },
     { name: "xlm-mlm-en-2048", kind: "bidirectional" },
     { name: "xlm-mlm-ende-1024", kind: "bidirectional" },
     { name: "xlm-mlm-enfr-1024", kind: "bidirectional" },

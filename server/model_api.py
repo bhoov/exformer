@@ -2,6 +2,7 @@ from typing import List, Union, Tuple
 
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelWithLMHead, AutoModel
+import hjson
 
 from transformer_formatter import TransformerOutputFormatter
 from utils.f import delegates, pick, memoize
@@ -9,6 +10,12 @@ from utils.f import delegates, pick, memoize
 @memoize
 def get_details(mname):
     return ModelDetails(mname)
+
+def get_supported_model_names(fname):
+    with open(fname, 'r') as fp: txt = fp.read()
+    all_models = hjson.loads(txt)
+    model_names = [o['name'] for o in all_models['models']]
+    return model_names
 
 def get_model_tok(mname):
     conf = AutoConfig.from_pretrained(mname, output_attentions=True, output_past=False)
