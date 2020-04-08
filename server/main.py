@@ -24,12 +24,12 @@ app.add_middleware(
 # Flask main routes
 @app.get("/")
 def index():
-    return RedirectResponse(url="serve/exBERT.html")
+    return RedirectResponse(url="client/exBERT.html")
 
 # the `file_path:path` says to accept any path as a string here. Otherwise, `file_paths` containing `/` will not be served properly
-@app.get("/serve/{file_path:path}")
+@app.get("/client/{file_path:path}")
 def send_static_client(file_path:str):
-    """ Serves (makes accessible) all files from ./client/ to ``/serve/{path}``
+    """ Serves (makes accessible) all files from ./client/ to ``/client/{path}``
 
     Args:
         path: Name of file in the client directory
