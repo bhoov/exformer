@@ -1,22 +1,27 @@
 import * as d3 from "d3";
 import * as R from "ramda"
 import * as _ from "lodash"
-import { VComponent } from "./VisComponent";
-import { DivHover, PointsTo } from "./DivHover"
-import { SimpleEventHandler } from "../etc/SimpleEventHandler";
-import { D3Sel } from "../etc/Util";
+import {VComponent} from "./VisComponent";
+import {DivHover, PointsTo} from "./DivHover"
+import {SimpleEventHandler} from "../etc/SimpleEventHandler";
+import {D3Sel} from "../etc/Util";
 import * as tp from "../etc/types"
+import tippy from "tippy.js";
 
 type infoEventFromI = (sel: D3Sel, i: number) => tp.TokenEvent
 type infoEmbeddingEventFromI = (sel: D3Sel, i: number, embed: number[]) => tp.TokenEmbeddingEvent
 
-export abstract class TextTokens extends VComponent<tp.FullSingleTokenInfo[]>{
+export abstract class TextTokens extends VComponent<tp.FullSingleTokenInfo[]> {
 
     abstract css_name: string
     abstract hover_css_name: string
     abstract side: tp.SideOptions
-    eInfo: infoEventFromI = (sel, i) => { return { sel: sel, side: this.side, ind: i } }
-    eEmbedding: infoEmbeddingEventFromI = (sel, i, embed) => { return { sel: sel, side: this.side, ind: i, embeddings: embed } }
+    eInfo: infoEventFromI = (sel, i) => {
+        return {sel: sel, side: this.side, ind: i}
+    }
+    eEmbedding: infoEmbeddingEventFromI = (sel, i, embed) => {
+        return {sel: sel, side: this.side, ind: i, embeddings: embed}
+    }
     divHover: DivHover
 
     static events = {
@@ -62,7 +67,8 @@ export abstract class TextTokens extends VComponent<tp.FullSingleTokenInfo[]>{
         return this._data[ind]
     }
 
-    _init() { }
+    _init() {
+    }
 
     _wrangle(data: tp.FullSingleTokenInfo[]) {
         this.data = this._data;
@@ -71,15 +77,16 @@ export abstract class TextTokens extends VComponent<tp.FullSingleTokenInfo[]>{
 
     makePopup() {
         const divOps = this.divOps
-        this.divHover = new DivHover(this.parent, this.eventHandler, divOps)
+        // this.divHover = new DivHover(this.parent, this.eventHandler, divOps)
     }
 
     makeHtmlForPopup(token: tp.FullSingleTokenInfo): string {
-        const out = R.zip(token.topk_words, token.topk_probs).map(w => {
+        let out = R.zip(token.topk_words, token.topk_probs).map(w => {
             const name = w[0].replace(/\u0120/g, " ").replace(/\u010A/g, "\\n")
             const prob = w[1].toFixed(2)
             return `<b>${name}</b>:    ${prob}`
         }).map(v => `${v}<br>`).join('')
+        out = this.divOps.title + '<br/>' + out;
         return out
     }
 
@@ -110,11 +117,17 @@ export abstract class TextTokens extends VComponent<tp.FullSingleTokenInfo[]>{
             .text((d) => {
                 return d.text.replace("\u0120", " ").replace("\u010A", "\\n")
             })
+            .each(function (d, i) {
+                tippy(<HTMLDivElement>this, {
+                    content: self.makeHtmlForPopup(d),
+                    allowHTML: true
+                })
+            })
             .on('mouseover', function (d, i) {
                 const sel = d3.select(this);
                 sel.style('background', 'lightblue');
                 self.eventHandler.trigger(TextTokens.events.tokenMouseOver, self.eInfo(sel, i))
-                self.divHover.html(self.makeHtmlForPopup(d))
+                // self.divHover.html(self.makeHtmlForPopup(d))
             })
             .on('mouseout', function (d, i) {
                 let sel = d3.select(this);

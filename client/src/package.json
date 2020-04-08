@@ -36,6 +36,7 @@
     "object-hash": "^2.0.0",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.3",
+    "tippy.js": "^6.1.1",
     "webcola": "^3.4.0"
   },
   "devDependencies": {
