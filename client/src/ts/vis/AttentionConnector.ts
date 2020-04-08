@@ -1,16 +1,16 @@
 import * as d3 from "d3";
 import 'd3-selection-multi'
-import { D3Sel } from "../etc/Util";
-import { Edge, EdgeData } from "./EdgeConnector"
-import { VComponent } from "./VisComponent";
-import { SimpleEventHandler } from "../etc/SimpleEventHandler";
+import {D3Sel} from "../etc/Util";
+import {Edge, EdgeData} from "./EdgeConnector"
+import {VComponent} from "./VisComponent";
+import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import * as tp from "../etc/types"
 
 export type AttentionData = number[][]
 
-export const scaleLinearWidth = opacity => 5 * opacity^0.33;
+export const scaleLinearWidth = opacity => 5 * opacity ^ 0.33;
 
-export class AttentionGraph extends VComponent<AttentionData>{
+export class AttentionGraph extends VComponent<AttentionData> {
     css_name = '';
     _current: {};
 
@@ -19,8 +19,8 @@ export class AttentionGraph extends VComponent<AttentionData>{
     plotData: Edge[]; // Needed for plotting
 
     /** COMPONENTS
-     * Expose the components belonging to the class as properties of the class. 
-     * This is useful to create methods that specifically modify a single part or component without having to reselect it. 
+     * Expose the components belonging to the class as properties of the class.
+     * This is useful to create methods that specifically modify a single part or component without having to reselect it.
      * Makes for more responsive applications
      * */
     svg: D3Sel;
@@ -82,10 +82,10 @@ export class AttentionGraph extends VComponent<AttentionData>{
             this.paths.attrs({
                 'd': (d, i) => {
                     const data: { source: [number, number], target: [number, number] } =
-                    {
-                        source: [0, op.boxheight * (d.i + 0.5 + op.offset)],
-                        target: [op.width, op.boxheight * (d.j + 0.5)] // + 2 allows small offset
-                    };
+                        {
+                            source: [0, op.boxheight * (d.i + 0.5 + op.offset)],
+                            target: [op.width, op.boxheight * (d.j + 0.5)] // + 2 allows small offset
+                        };
                     return this.linkGen(data);
                 },
                 'class': 'atn-curve'
@@ -164,7 +164,7 @@ export class AttentionGraph extends VComponent<AttentionData>{
         let arr = []
 
         // Group normalization
-        switch (this.normBy){
+        switch (this.normBy) {
             case tp.NormBy.ROW:
                 arr = this.edgeData.extent(1);
                 this.opacityScales = [];
@@ -259,9 +259,11 @@ export class AttentionGraph extends VComponent<AttentionData>{
         }
 
         this._threshold = value;
-        this.plotData = this.edgeData.format(this._threshold);
-        this.createScales();
-        this.updateData();
+        if (this.edgeData) {
+            this.plotData = this.edgeData.format(this._threshold);
+            this.createScales();
+            this.updateData();
+        }
         return this;
     }
 

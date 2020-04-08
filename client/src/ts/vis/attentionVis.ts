@@ -8,18 +8,18 @@ import * as R from 'ramda'
 import * as tp from '../etc/types';
 import * as rsp from '../api/responses';
 import '../etc/xd3'
-import { API } from '../api/mainApi'
-import { UIConfig } from '../uiConfig'
-import { TextTokens, LeftTextToken, RightTextToken } from './TextToken'
-import { AttentionHeadBox, getAttentionInfo } from './AttentionHeadBox'
-import { AttentionGraph } from './AttentionConnector'
-import { TokenWrapper, sideToLetter } from '../data/TokenWrapper'
-import { AttentionWrapper, makeFromMetaResponse } from '../data/AttentionCapsule'
-import { SimpleEventHandler } from '../etc/SimpleEventHandler'
-import { D3Sel, Sel } from '../etc/Util';
-import { from, fromEvent } from 'rxjs'
-import { switchMap, map, tap } from 'rxjs/operators'
-import { BaseType } from "d3";
+import {API} from '../api/mainApi'
+import {UIConfig} from '../uiConfig'
+import {TextTokens, LeftTextToken, RightTextToken} from './TextToken'
+import {AttentionHeadBox, getAttentionInfo} from './AttentionHeadBox'
+import {AttentionGraph} from './AttentionConnector'
+import {TokenWrapper, sideToLetter} from '../data/TokenWrapper'
+import {AttentionWrapper, makeFromMetaResponse} from '../data/AttentionCapsule'
+import {SimpleEventHandler} from '../etc/SimpleEventHandler'
+import {D3Sel, Sel} from '../etc/Util';
+import {from, fromEvent} from 'rxjs'
+import {switchMap, map, tap} from 'rxjs/operators'
+import {BaseType} from "d3";
 import {createStaticSkeleton} from "./staticLayout";
 
 
@@ -91,8 +91,8 @@ export class MainGraphic {
         this.eventHandler = new SimpleEventHandler(<Element>this.base.node());
 
         this.vizs = {
-            leftHeads: new AttentionHeadBox(this.sels.atnHeads.left, this.eventHandler, { side: "left", }),
-            rightHeads: new AttentionHeadBox(this.sels.atnHeads.right, this.eventHandler, { side: "right" }),
+            leftHeads: new AttentionHeadBox(this.sels.atnHeads.left, this.eventHandler, {side: "left",}),
+            rightHeads: new AttentionHeadBox(this.sels.atnHeads.right, this.eventHandler, {side: "right"}),
             tokens: {
                 left: new LeftTextToken(this.sels.tokens.left, this.eventHandler),
                 right: new RightTextToken(this.sels.tokens.right, this.eventHandler),
@@ -107,7 +107,7 @@ export class MainGraphic {
 
     private mainInit() {
         const self = this;
-        this.sels.body.style("cursor", "progress")
+        this._deactivateUI(true);
         this.api.getModelDetails(this.uiConf.model()).then(md => {
             const val = md.payload
 
@@ -130,8 +130,7 @@ export class MainGraphic {
                 let normBy
                 if ((this.uiConf.modelKind() == tp.ModelKind.Autoregressive) && (!this.uiConf.hideClsSep())) {
                     normBy = tp.NormBy.COL
-                }
-                else {
+                } else {
                     normBy = tp.NormBy.ALL
                 }
                 this.vizs.attentionSvg.normBy = normBy
@@ -152,7 +151,7 @@ export class MainGraphic {
                 }
 
                 let predictHoverTitle = this.uiConf.modelKind() == tp.ModelKind.Autoregressive ? "Would predict next..." : "Would predict here..."
-                self.vizs.tokens.left.divOps.title= predictHoverTitle;
+                self.vizs.tokens.left.divOps.title = predictHoverTitle;
                 self.vizs.tokens.right.divOps.title = predictHoverTitle;
                 if (this.uiConf.modelKind() == tp.ModelKind.Autoregressive) {
                     // Ensure only 1 mask ind is present for autoregressive models
@@ -161,7 +160,7 @@ export class MainGraphic {
                     }
                 }
 
-                this.sels.body.style("cursor", "default")
+                this._deactivateUI(false);
             });
         })
 
@@ -181,6 +180,14 @@ export class MainGraphic {
         this.sels.corpusMsgBox.text(msg)
     }
 
+    private _deactivateUI(deact: boolean) {
+        this.sels.body.style("cursor", deact ? "progress" : "default")
+        this.base.select('.exbert-full').classed('deactivated', deact);
+        this.base.select('.loading-panel')
+            .style('display', deact ? null:'none');
+
+    }
+
     private _bindEventHandler() {
         const self = this;
         this.eventHandler.bind(TextTokens.events.tokenDblClick, (e) => {
@@ -189,7 +196,7 @@ export class MainGraphic {
                     e.sel.classed("masked-token", !e.sel.classed("masked-token"));
                     const letter = sideToLetter(e.side, this.uiConf.attType)
                     self.tokCapsule[letter].toggle(e.ind)
-                    self.sels.body.style("cursor", "progress")
+                    self._deactivateUI(true);
 
                     self.api.updateMaskedAttentions(this.uiConf.model(), this.tokCapsule.a, this.uiConf.sentence(), this.uiConf.layer()).then((resp: rsp.AttentionDetailsResponse) => {
                         const r = resp.payload;
@@ -199,7 +206,7 @@ export class MainGraphic {
                         self.uiConf.maskInds(this.tokCapsule.a.maskInds)
 
                         self.update();
-                        self.sels.body.style("cursor", "default")
+                        self._deactivateUI(false);
                     })
                     break;
                 }
@@ -232,9 +239,11 @@ export class MainGraphic {
             this.renderAttHead()
         })
 
-        this.eventHandler.bind(AttentionHeadBox.events.rowMouseOver, (e: tp.HeadBoxEvent) => { })
+        this.eventHandler.bind(AttentionHeadBox.events.rowMouseOver, (e: tp.HeadBoxEvent) => {
+        })
 
-        this.eventHandler.bind(AttentionHeadBox.events.rowMouseOut, () => { })
+        this.eventHandler.bind(AttentionHeadBox.events.rowMouseOut, () => {
+        })
 
         this.eventHandler.bind(AttentionHeadBox.events.boxMouseOver, (e: tp.HeadBoxEvent) => {
             const updateMat = this.attCapsule.byHead(e.head)
@@ -251,7 +260,8 @@ export class MainGraphic {
             showBySide(this.uiConf.token())
         })
 
-        this.eventHandler.bind(AttentionHeadBox.events.boxMouseMove, (e) => { })
+        this.eventHandler.bind(AttentionHeadBox.events.boxMouseMove, (e) => {
+        })
 
         this.eventHandler.bind(AttentionHeadBox.events.boxClick, (e: { head }) => {
             const result = this.uiConf.toggleHead(e.head)
@@ -352,7 +362,7 @@ export class MainGraphic {
 
             // Only update if the form is filled correctly
             if (sentence_a.length) {
-                this.sels.body.style("cursor", "progress")
+                this._deactivateUI(true);
                 this.api.getMetaAttentions(this.uiConf.model(), sentence_a, this.uiConf.layer())
                     .then((resp: rsp.AttentionDetailsResponse) => {
                         const r = resp.payload
@@ -362,7 +372,7 @@ export class MainGraphic {
                         this.tokCapsule.updateFromResponse(r);
                         this._toggleTokenSel();
                         this.update();
-                        this.sels.body.style("cursor", "default")
+                        this._deactivateUI(false);
                     })
             }
         }
@@ -432,7 +442,7 @@ export class MainGraphic {
             tap(v => {
                 console.log("New layer: ", v);
                 self.uiConf.layer(v);
-                self.sels.body.style("cursor", "progress");
+                self._deactivateUI(true);
             }),
             switchMap((v) => from(self.api.updateMaskedAttentions(self.uiConf.model(), self.tokCapsule.a, self.uiConf.sentence(), v)))
         ).subscribe({
@@ -442,7 +452,7 @@ export class MainGraphic {
                 self.tokCapsule.updateTokens(r);
                 self.uiConf.maskInds(self.tokCapsule.a.maskInds)
                 self.update();
-                self.sels.body.style("cursor", "default")
+                self._deactivateUI(false);
                 self._toggleTokenSel();
             }
         })
@@ -453,7 +463,10 @@ export class MainGraphic {
 
         // Init threshold stuff
         const dispThresh = (thresh) => Math.round(thresh * 100)
-        d3.select('#my-range-value').text(dispThresh(self.uiConf.threshold()))
+        d3.select('#my-range-value').text(dispThresh(self.uiConf.threshold()));
+
+        this.sels.threshSlider.property('value', dispThresh(self.uiConf.threshold()));
+        self.vizs.attentionSvg.threshold(self.uiConf.threshold());
 
         this.sels.threshSlider.on("input", _.throttle(function () {
             const node = <HTMLInputElement>this;

@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+from async_lru import alru_cache
 
 import api
 
@@ -40,7 +41,8 @@ def send_static_client(file_path:str):
     return FileResponse(f)
 
 @app.get("/api/get-model-details")
-def get_model_details(model:str):
+@alru_cache(maxsize=80)
+async def get_model_details(model:str):
     """Get important information about a model, like the number of layers and heads
     
     Args:
@@ -72,7 +74,8 @@ def get_model_details(model:str):
     }
 
 @app.get("/api/attend-with-meta")
-def get_attentions_and_preds(model:str, sentence:str, layer:int):
+@alru_cache(maxsize=1024)
+async def get_attentions_and_preds(model:str, sentence:str, layer:int):
     """For a sentence, at a layer, get the attentions and predictions
     
     Args:
@@ -110,7 +113,8 @@ def get_attentions_and_preds(model:str, sentence:str, layer:int):
     }
 
 @app.post("/api/update-mask")
-def update_masked_attention(payload:api.MaskUpdatePayload):
+@alru_cache(maxsize=1024)
+async def update_masked_attention(payload:api.MaskUpdatePayload):
     """From tokens and indices of what should be masked, get the attentions and predictions
     
     payload = request['payload']
