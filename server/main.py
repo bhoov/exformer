@@ -1,3 +1,4 @@
+import time
 import argparse
 import numpy as np
 from fastapi import FastAPI
@@ -10,7 +11,11 @@ import api
 
 import utils.path_fixes as pf
 from utils.f import ifnone
-from model_api import get_details
+from model_api import get_details, get_supported_model_names
+
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--port", default=8000, type=int, help="Port to run the app. ")
+parser.add_argument("--preload", action="store_true", help="If given, preload all models")
 
 app = FastAPI()
 app.add_middleware(
@@ -20,6 +25,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def preload_supported_models():
+    model_names = get_supported_model_names(pf.SUPPORTED_MODELS)
+    start = time.time()
+    for mname in model_names:
+        print(f"loading {mname}")
+        get_details(mname)
+
+    end = time.time()
+
+    print(f"Preloading took {end-start} seconds")
 
 # Flask main routes
 @app.get("/")
@@ -168,5 +184,7 @@ def update_masked_attention(payload:api.MaskUpdatePayload):
 if __name__ != "__main__":
     print("Initializing as the main script") # Is never printed
 else:
+    args, _ = parser.parse_known_args()
     # This file is not run as __main__ in the uvicorn environment
-    uvicorn.run(app, host='127.0.0.1', port=8000)
+    if args.preload: preload_supported_models()
+    uvicorn.run(app, host='127.0.0.1', port=args.port)
