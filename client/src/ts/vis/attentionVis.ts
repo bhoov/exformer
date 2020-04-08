@@ -453,7 +453,10 @@ export class MainGraphic {
 
         // Init threshold stuff
         const dispThresh = (thresh) => Math.round(thresh * 100)
-        d3.select('#my-range-value').text(dispThresh(self.uiConf.threshold()))
+        d3.select('#my-range-value').text(dispThresh(self.uiConf.threshold()));
+
+        this.sels.threshSlider.property('value', dispThresh(self.uiConf.threshold()));
+        self.vizs.attentionSvg.threshold(self.uiConf.threshold());
 
         this.sels.threshSlider.on("input", _.throttle(function () {
             const node = <HTMLInputElement>this;
