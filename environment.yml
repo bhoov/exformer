@@ -16,7 +16,9 @@ dependencies:
   - numpy
   - pytorch
   - torchvision
+  - cachetools
   - pip:
     - transformers>=2.8.0
     - hjson
     - fastapi[all]
+    - async-lru
