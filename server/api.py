@@ -1,7 +1,11 @@
 from pydantic import BaseModel
 from typing import *
 
-class MaskUpdatePayload(BaseModel):
+class HashableBaseModel(BaseModel):
+    def __hash__(self):
+        return hash(self.json())
+
+class MaskUpdatePayload(HashableBaseModel):
     model: str
     tokens: List[str]
     sentence: str
