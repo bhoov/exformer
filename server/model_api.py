@@ -1,4 +1,6 @@
 from typing import List, Union, Tuple
+import ray
+import psutil
 
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelWithLMHead, AutoModel
@@ -6,9 +8,14 @@ from transformers import AutoConfig, AutoTokenizer, AutoModelWithLMHead, AutoMod
 from transformer_formatter import TransformerOutputFormatter
 from utils.f import delegates, pick, memoize
 
+# TODO Find a way to only call once
+print("\nConnecting to running ray...\n")
+ray.init(address="auto", redis_password="5241590000000000", ignore_reinit_error=True)
+
 @memoize
 def get_details(mname):
-    return ModelDetails(mname)
+    return ModelDetails.remote(mname)
+
 
 def get_model_tok(mname):
     conf = AutoConfig.from_pretrained(mname, output_attentions=True, output_past=False)
@@ -16,14 +23,26 @@ def get_model_tok(mname):
     model = AutoModelWithLMHead.from_pretrained(mname, config=conf)
     return model, tok
 
+
+@ray.remote
 class ModelDetails:
     """Wraps a transformer model and tokenizer to prepare inputs to the frontend visualization"""
+
     def __init__(self, mname):
         self.mname = mname
         self.model, self.tok = get_model_tok(self.mname)
         self.model.eval()
         self.config = self.model.config
-    
+
+    def get_config(self):
+        return self.config
+
+    def get_mname(self):
+        return self.mname
+
+    def get_mask_token(self):
+        return self.tok.mask_token
+
     def from_sentence(self, sentence: str) -> TransformerOutputFormatter:
         """Get attentions and word probabilities from a sentence. Special tokens are automatically added if a sentence is passed.
         
@@ -35,7 +54,12 @@ class ModelDetails:
         return self.from_tokens(tokens, sentence, add_special_tokens=True)
 
     def from_tokens(
-        self, tokens: List[str], orig_sentence:str, add_special_tokens:bool=False, mask_attentions:bool=False, topk:int=5
+        self,
+        tokens: List[str],
+        orig_sentence: str,
+        add_special_tokens: bool = False,
+        mask_attentions: bool = False,
+        topk: int = 5,
     ) -> TransformerOutputFormatter:
         """Get formatted attention and predictions from a list of tokens.
 
@@ -51,19 +75,27 @@ class ModelDetails:
 
         # For GPT2, add the beginning of sentence token to the input. Note that this will work on all models but XLM
 
-        if 'gpt' in self.mname and add_special_tokens:
+        if "gpt" in self.mname and add_special_tokens:
             bost = self.tok.bos_token_id
             ids.insert(0, bost)
 
-        inputs = self.tok.prepare_for_model(ids, add_special_tokens=add_special_tokens, return_tensors="pt")
+        inputs = self.tok.prepare_for_model(
+            ids, add_special_tokens=add_special_tokens, return_tensors="pt"
+        )
         parsed_input = self.parse_inputs(inputs, mask_attentions=mask_attentions)
-        in_ids = parsed_input['input_ids']
+        in_ids = parsed_input["input_ids"]
 
-        if 't5' in self.mname:
+        if "t5" in self.mname:
             # Is this correct for T5?
-            output = self.model(input_ids=in_ids, decoder_input_ids=in_ids, attention_mask=parsed_input['attention_mask'])
+            output = self.model(
+                input_ids=in_ids,
+                decoder_input_ids=in_ids,
+                attention_mask=parsed_input["attention_mask"],
+            )
         else:
-            output = self.model(input_ids=in_ids, attention_mask=parsed_input['attention_mask'])
+            output = self.model(
+                input_ids=in_ids, attention_mask=parsed_input["attention_mask"]
+            )
 
         logits, atts = self.choose_logits_att(output)
         words, probs = self.logits2words(logits, topk)
@@ -76,12 +108,12 @@ class ModelDetails:
             atts,
             words,
             probs.tolist(),
-            self.config
+            self.config,
         )
 
         return formatted_output
 
-    def choose_logits_att(self, out:Tuple) -> Tuple:
+    def choose_logits_att(self, out: Tuple) -> Tuple:
         """Select from the model's output the logits and the attentions, switching on model name.
 
         For example, T5 and BART models have an output of (logits, decoder_attentions, encoder_embeddings, encoder_attentions).
@@ -100,12 +132,12 @@ class ModelDetails:
         for i in range(len(out)):
             t = out[i]
             print(f"Len {i}: ", len(t))
-            if type(t) is tuple or type(t) is list: 
+            if type(t) is tuple or type(t) is list:
                 print(f"Iterable[0] Shape {i}: ", t[0].shape)
             else:
                 print(f"Straight Shape {i}: ", t.shape)
 
-        if 't5' in self.mname or 'bart' in self.mname:
+        if "t5" in self.mname or "bart" in self.mname:
             logits, _, _, atts = out
         else:
             logits, atts = out
@@ -167,10 +199,19 @@ class ModelDetails:
 
         # DEFINE SPECIAL TOKENS MASK
         if "special_tokens_mask" not in inputs.keys():
-            special_tokens = set([self.tok.unk_token_id, self.tok.cls_token_id, self.tok.sep_token_id, self.tok.bos_token_id, self.tok.eos_token_id, self.tok.pad_token_id])
-            in_ids = inputs['input_ids'][0]
+            special_tokens = set(
+                [
+                    self.tok.unk_token_id,
+                    self.tok.cls_token_id,
+                    self.tok.sep_token_id,
+                    self.tok.bos_token_id,
+                    self.tok.eos_token_id,
+                    self.tok.pad_token_id,
+                ]
+            )
+            in_ids = inputs["input_ids"][0]
             special_tok_mask = [1 if int(i) in special_tokens else 0 for i in in_ids]
-            inputs['special_tokens_mask'] = special_tok_mask
+            inputs["special_tokens_mask"] = special_tok_mask
 
         if mask_attentions:
             out["attention_mask"] = torch.tensor(

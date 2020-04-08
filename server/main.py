@@ -1,13 +1,15 @@
 import argparse
-import numpy as np
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+import numpy as np
+import ray
 
 import api
-
 import utils.path_fixes as pf
 from utils.f import ifnone
 from model_api import get_details
@@ -34,13 +36,12 @@ def send_static_client(file_path:str):
     Args:
         path: Name of file in the client directory
     """
-    print(f"\n\nPath: {file_path}")
     f = str(pf.CLIENT_DIST / file_path)
-    print("Finding file: ", f)
+    print("\nFinding file: ", f, "\n")
     return FileResponse(f)
 
 @app.get("/api/get-model-details")
-def get_model_details(model:str):
+async def get_model_details(model:str):
     """Get important information about a model, like the number of layers and heads
     
     Args:
@@ -57,7 +58,8 @@ def get_model_details(model:str):
     """
     deets = get_details(model)
 
-    info = deets.config
+    info = ray.get(deets.get_config.remote())
+
     nlayers = info.num_hidden_layers
     nheads = info.num_attention_heads
 
@@ -72,7 +74,7 @@ def get_model_details(model:str):
     }
 
 @app.get("/api/attend-with-meta")
-def get_attentions_and_preds(model:str, sentence:str, layer:int):
+async def get_attentions_and_preds(model:str, sentence:str, layer:int):
     """For a sentence, at a layer, get the attentions and predictions
     
     Args:
@@ -101,7 +103,11 @@ def get_attentions_and_preds(model:str, sentence:str, layer:int):
         }
     """
     details = get_details(model)
-    deets = details.from_sentence(sentence)
+
+    # deets = details.from_sentence(sentence)
+    deets = ray.get(details.from_sentence.remote(sentence))
+    # deets = await details.from_sentence.remote(sentence)
+
     payload_out = deets.to_json(layer)
 
     return {
@@ -110,7 +116,7 @@ def get_attentions_and_preds(model:str, sentence:str, layer:int):
     }
 
 @app.post("/api/update-mask")
-def update_masked_attention(payload:api.MaskUpdatePayload):
+async def update_masked_attention(payload:api.MaskUpdatePayload):
     """From tokens and indices of what should be masked, get the attentions and predictions
     
     payload = request['payload']
@@ -150,14 +156,17 @@ def update_masked_attention(payload:api.MaskUpdatePayload):
 
     details = get_details(model)
 
-    MASK = details.tok.mask_token
+    # MASK = details.get_mask_token()
+    MASK = ray.get(details.get_mask_token.remote())
     mask_tokens = lambda toks, maskinds: [
         t if i not in maskinds else ifnone(MASK, t) for (i, t) in enumerate(toks)
     ]
 
     token_inputs = mask_tokens(tokens, mask)
 
-    deets = details.from_tokens(token_inputs, sentence)
+    # deets = details.from_tokens(token_inputs, sentence)
+    deets = ray.get(details.from_tokens.remote(token_inputs, sentence))
+    # deets = await details.from_tokens.remote(token_inputs, sentence)
     payload_out = deets.to_json(layer)
 
     return {
