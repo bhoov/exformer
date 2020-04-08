@@ -85,7 +85,7 @@ export class API {
             layer: layer
         };
 
-        const url = makeUrl(this.baseURL + "/attend+meta", toSend)
+        const url = makeUrl(this.baseURL + "/attend-with-meta", toSend)
         console.log("--- GET " + url);
 
         // Add hash and value to hashObj
