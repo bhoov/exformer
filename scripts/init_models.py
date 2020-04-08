@@ -13,7 +13,7 @@ INSIDE `sample.hjson`
 import hjson
 import click
 from pathlib import Path
-from model_api import get_details
+from model_api import get_details, get_supported_model_names
 import multiprocessing as mp
 
 def download_model(mname):
@@ -24,11 +24,7 @@ def download_model(mname):
 @click.command()
 @click.option("--fname", "-f", help="File location of supported model list")
 def main(fname):
-    with open(fname, 'r') as fp:
-        txt = fp.read()
-
-    all_models = hjson.loads(txt)
-    model_names = [o['name'] for o in all_models['models']]
+    model_names = get_supported_model_names(fname)
 
     with mp.Pool() as p:
         p.map(download_model, model_names)

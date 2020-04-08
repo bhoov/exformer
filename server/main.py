@@ -1,4 +1,7 @@
+import time
 import argparse
+from concurrent.futures import ThreadPoolExecutor as ThreadPool
+
 import numpy as np
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
@@ -11,7 +14,11 @@ import api
 
 import utils.path_fixes as pf
 from utils.f import ifnone
-from model_api import get_details
+from model_api import get_details, get_supported_model_names
+
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--port", default=8000, type=int, help="Port to run the app. ")
+parser.add_argument("--preload", action="store_true", help="If given, preload all models")
 
 app = FastAPI()
 app.add_middleware(
@@ -21,6 +28,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def preload_model_info(mname):
+    print(f"Loading {mname}...")
+    get_details(mname)
+
+def preload_supported_models():
+    model_names = get_supported_model_names(pf.SUPPORTED_MODELS)
+
+    start = time.time()
+    with ThreadPool() as executor:
+        list(executor.map(preload_model_info, model_names))
+    end = time.time()
+    print(f"Preloading took {end-start} seconds")
 
 # Flask main routes
 @app.get("/")
@@ -166,11 +186,14 @@ async def update_masked_attention(payload:api.MaskUpdatePayload):
 
     return {
         "status": 200,
-        "payload": payload_out,
+        "payload": payload_out
     }
 
-if __name__ != "__main__":
+if __name__ == "__main__":
     print("Initializing as the main script") # Is never printed
-else:
+    args, _ = parser.parse_known_args()
     # This file is not run as __main__ in the uvicorn environment
-    uvicorn.run(app, host='127.0.0.1', port=8000)
+    if args.preload: preload_supported_models()
+    uvicorn.run(app, host='127.0.0.1', port=args.port)
+else:
+    print("Running from something else  =')")
