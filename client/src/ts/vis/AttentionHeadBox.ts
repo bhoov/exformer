@@ -5,6 +5,7 @@ import { DivHover, DivHoverOpts, PointsTo } from "./DivHover"
 import { D3Sel } from "../etc/Util";
 import { SVG } from "../etc/SVGplus"
 import * as tf from '@tensorflow/tfjs'
+import tippy from 'tippy.js';
 import { Tensor3D } from "@tensorflow/tfjs";
 
 // The below two (interface and function) can become a class
@@ -213,13 +214,19 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
                 opacity: (d: number) => this.opacityScale(d),
                 fill: "blue"
             })
+            .each(function(d,i){
+                tippy(<SVGRectElement>this,{
+                    content:self.makeHtmlForPopup(i + 1),
+                    allowHTML:true
+                } )
+            })
             .on("mouseover", (d:number, i) => {
-                self.divHover.html(self.makeHtmlForPopup(i + 1))
-                self.divHover.show()
+                // self.divHover.html(self.makeHtmlForPopup(i + 1))
+                // self.divHover.show()
                 self.eventHandler.trigger(AttentionHeadBox.events.boxMouseOver, boxEvent(i))
             })
             .on("mouseout", (d, i) => {
-                self.divHover.hide()
+                // self.divHover.hide()
                 self.eventHandler.trigger(AttentionHeadBox.events.boxMouseOut, boxEvent(i))
             })
             .on("click", (d, i) => {

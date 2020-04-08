@@ -152,8 +152,8 @@ export class MainGraphic {
                 }
 
                 let predictHoverTitle = this.uiConf.modelKind() == tp.ModelKind.Autoregressive ? "Would predict next..." : "Would predict here..."
-                self.vizs.tokens.left.divHover.title(predictHoverTitle)
-                self.vizs.tokens.right.divHover.title(predictHoverTitle)
+                self.vizs.tokens.left.divOps.title= predictHoverTitle;
+                self.vizs.tokens.right.divOps.title = predictHoverTitle;
                 if (this.uiConf.modelKind() == tp.ModelKind.Autoregressive) {
                     // Ensure only 1 mask ind is present for autoregressive models
                     if (this.uiConf.hasToken()) {
