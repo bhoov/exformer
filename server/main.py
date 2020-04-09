@@ -13,9 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 import uvicorn
-import ray
 from async_lru import alru_cache
 from pydantic import BaseModel
+# import ray
 
 import api
 import json
@@ -125,7 +125,8 @@ async def get_model_details(model: str, request_hash=None) -> api.ModelDetailRes
     """
     deets = get_details(model)
 
-    info = ray.get(deets.get_config.remote())
+    info = deets.get_config()
+    # info = ray.get(deets.get_config.remote())
 
     nlayers = info.num_hidden_layers
     nheads = info.num_attention_heads
@@ -172,8 +173,8 @@ async def get_attentions_and_preds(
     sentence = sentence[:225] # Only take the first 225 characters
     details = get_details(model)
 
-    # deets = details.from_sentence(sentence)
-    deets = ray.get(details.from_sentence.remote(sentence))
+    deets = details.from_sentence(sentence)
+    # deets = ray.get(details.from_sentence.remote(sentence))
     # deets = await details.from_sentence.remote(sentence)
 
     payload_out = deets.to_json(layer)
@@ -228,8 +229,8 @@ async def update_masked_attention(
 
     details = get_details(model)
 
-    # MASK = details.get_mask_token()
-    MASK = ray.get(details.get_mask_token.remote())
+    MASK = details.get_mask_token()
+    # MASK = ray.get(details.get_mask_token.remote())
     mask_tokens = lambda toks, maskinds: [
         t if i not in maskinds else ifnone(MASK, t) for (i, t) in enumerate(toks)
     ]
