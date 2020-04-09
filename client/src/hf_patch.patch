@@ -1,0 +1,27 @@
+diff --git a/client/src/css/main.scss b/client/src/css/main.scss
+index 36e836b..f48da31 100644
+--- a/client/src/css/main.scss
++++ b/client/src/css/main.scss
+@@ -138,7 +138,7 @@ label {
+     display: inline-block;
+     float: right;
+     margin-right: 10px;
+-    margin-top: 10px;
++    margin-top: 1px;
+     //margin-bottom: 5px;
+   }
+ 
+diff --git a/client/src/exBERT.html b/client/src/exBERT.html
+index 4c76e7f..9129bc0 100644
+--- a/client/src/exBERT.html
++++ b/client/src/exBERT.html
+@@ -37,7 +37,8 @@
+     </div>
+ 
+     <div class="header-info">
+-        IBM Research & HarvardNLP
++         <a href="https://researcher.watson.ibm.com/researcher/view_group.php?id=5948"> IBM Research </a>& <a href="https://nlp.seas.harvard.edu"> HarvardNLP</a><br>
++         & <a href="https://huggingface.co"> huggingface 🤗 </a>
+     </div>
+ 
+ </div>

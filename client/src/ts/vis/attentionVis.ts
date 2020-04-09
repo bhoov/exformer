@@ -84,7 +84,7 @@ export class MainGraphic {
      */
     constructor(baseDiv: Element) {
         this.base = d3.select(baseDiv)
-        this.api = new API()
+        this.api = new API("api")
         this.uiConf = new UIConfig()
         this.sels = createStaticSkeleton(this.base)
 

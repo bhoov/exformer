@@ -33,13 +33,18 @@ def preload_model_info(mname):
     print(f"Loading {mname}...")
     get_details(mname)
 
-def preload_supported_models():
+def preload_supported_models(do_multi=False):
     model_names = get_supported_model_names(pf.SUPPORTED_MODELS)
 
     start = time.time()
-    with ThreadPool() as executor:
-        list(executor.map(preload_model_info, model_names))
+    if do_multi:
+        with ThreadPool() as executor:
+            list(executor.map(preload_model_info, model_names))
+    else:
+        for mname in model_names:
+            preload_model_info(mname)
     end = time.time()
+
     print(f"Preloading took {end-start} seconds")
 
 # Flask main routes
@@ -192,8 +197,7 @@ async def update_masked_attention(payload:api.MaskUpdatePayload):
 if __name__ == "__main__":
     print("Initializing as the main script") # Is never printed
     args, _ = parser.parse_known_args()
-    # This file is not run as __main__ in the uvicorn environment
-    if args.preload: preload_supported_models()
+    if args.preload: preload_supported_models(do_multi=False) # multi seems to almost double used memory for minimal speed improvement
     uvicorn.run(app, host='127.0.0.1', port=args.port)
 else:
     print("Running from something else  =')")
