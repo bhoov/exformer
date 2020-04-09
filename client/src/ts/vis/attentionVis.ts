@@ -150,9 +150,11 @@ export class MainGraphic {
                     postResponseDisplayCleanup()
                 }
 
-                let predictHoverTitle = this.uiConf.modelKind() == tp.ModelKind.Autoregressive ? "Would predict next..." : "Would predict here..."
-                self.vizs.tokens.left.divOps.title = predictHoverTitle;
-                self.vizs.tokens.right.divOps.title = predictHoverTitle;
+                let predictHoverTitle =
+                    (this.uiConf.modelKind() == tp.ModelKind.Autoregressive) ? "Would predict next..." : "Would predict here..."
+                console.log(this.uiConf.modelKind(), predictHoverTitle,"--- this.uiConf.modelKind(), predictHoverTitle");
+                self.vizs.tokens.left.title = predictHoverTitle;
+                self.vizs.tokens.right.title = predictHoverTitle;
                 if (this.uiConf.modelKind() == tp.ModelKind.Autoregressive) {
                     // Ensure only 1 mask ind is present for autoregressive models
                     if (this.uiConf.hasToken()) {
@@ -527,6 +529,7 @@ export class MainGraphic {
             const me = d3.select(this)
             const mname = me.property('value')
             self.uiConf.model(mname);
+            console.log(mname, kindmap[mname],"--- mname, kindmap[mname]");
             self.uiConf.modelKind(kindmap[mname]);
             if (kindmap[mname] == tp.ModelKind.Autoregressive) {
                 console.log("RESETTING MASK INDS");

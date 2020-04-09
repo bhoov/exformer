@@ -169,6 +169,7 @@ async def get_attentions_and_preds(
             }
         }
     """
+    sentence = sentence[:225] # Only take the first 225 characters
     details = get_details(model)
 
     # deets = details.from_sentence(sentence)
@@ -219,8 +220,8 @@ async def update_masked_attention(
         }
     """
     model = payload.model
-    tokens = payload.tokens
-    sentence = payload.sentence
+    tokens = payload.tokens # Cap token input at 60
+    sentence = payload.sentence[:225] # Cap sentence input at 225 characters
     mask = payload.mask
     layer = payload.layer
     request_hash = payload.request_hash
