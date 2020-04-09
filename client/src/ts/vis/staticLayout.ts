@@ -8,144 +8,136 @@ export function createStaticSkeleton(base: D3Sel) {
     function template() {
         return `
             <!--        <div id="attention-vis">-->
-            <div>
-                <div id="model-selection">
-                    <label for="model-options"
-                           style="width:150px;margin-bottom: 5px;">Select
-                        model</label><select id="model-option-selector"
-                                             name="model-options">
+            <div class="loading-panel"><div class="loader"></div> Loading... </div>
+            <div class="exbert-full deactivated">
+                <div class="exbert-ui-panel">
+                    <div id="model-selection">
+                        <label for="model-options" class="ui-label">Select
+                            model</label><select id="model-option-selector"
+                                                 name="model-options">
 
-                </select>
-                </div>
-            </div>
-            <div id="sentence-input">
-                <form>
-                    <div class="form-group">
-                        <label for="form-sentence-a"
-                               style="width: 150px; display: inline-block;vertical-align: middle;">Input
-                            Sentence</label>
-                        <input id="form-sentence-a" type="text"
-                               name="sent-a-input"
-                               placeholder="Enter new sentence to analyze"
-                               value="The girl ran to a local pub to escape the din of her city."
-                               style="width: calc(100% - 240px); display: inline-block;vertical-align: middle;"
-                        >
-                        <button class="btn btn-primary" id="update-sentence"
-                                type="button"
-                                style="width:70px;display: inline-block;padding: 3px 3px;">
-                            Update
+                    </select>
+                    </div>
+
+                    <div id="sentence-input">
+                        <form>
+                            <div class="form-group">
+                                <label for="form-sentence-a" class="ui-label"
+                                       style="vertical-align: middle;">Input
+                                    Sentence</label>
+                                <input id="form-sentence-a" type="text"
+                                       name="sent-a-input"
+                                       placeholder="Enter new sentence to analyze"
+                                       value="The girl ran to a local pub to escape the din of her city."
+                                >
+                                <button class="btn btn-primary"
+                                        id="update-sentence"
+                                        type="button"
+                                        style="width:70px;display: inline-block;padding: 3px 3px;">
+                                    Update
+                                </button>
+                            </div>
+                        </form>
+                        <!--                <div class="padding"></div>-->
+
+                    </div>
+
+                    <div style="width:100%">
+                        <div class="ui-label">
+                            <b>Filters</b>
+                        </div>
+                        <div id="cls-toggle" class="small-full"
+                             style="margin-right: 25px;">
+                            <!--                    <div class="input-description">-->
+                            Hide Special Tokens
+                            <!--                    </div>-->
+                            <label class="switch"
+                                   style="vertical-align: middle;">
+                                <input type="checkbox" checked="checked">
+                                <span class="short-slider round"></span>
+                            </label>
+                        </div>
+                        <div class="small-full">
+                            <div style="display: inline-block;">
+                                Show top <span id="my-range-value">70</span>% of
+                                att:
+                            </div>
+
+                            <div class="slide-container">
+                                <input
+                                        type="range" min="0" max="100"
+                                        value="70"
+                                        class="slider" id="my-range"
+                                        style="vertical-align: middle;display: inline-block;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="layer-selection" style="margin-top: 10px;">
+                        <div class="input-description ui-label"
+                             style="vertical-align: top;">
+                            Layer
+                        </div>
+                        <div class="layer-select btn-group btn-group-toggle"
+                             data-toggle="buttons" id="layer-select"
+                             style="vertical-align: top;">
+
+                        </div>
+                    </div>
+
+                    <div id="selected-head-display">
+                        <div class="input-description ui-label"
+                             style="vertical-align: top;">
+                            Selected heads:
+                        </div>
+                        <div id="selected-heads"
+                             style="display:inline-block;vertical-align: top;">
+                        </div>
+                    </div>
+                    <div class="select-input no-small-dev"
+                         id="head-all-or-none">
+                        <button id="select-all-heads" class="btn btn-primary">
+                            Select all heads
+                        </button>
+                        <button id="select-no-heads" class="btn btn-primary">
+                            Unselect all heads
                         </button>
                     </div>
-                </form>
-                <!--                <div class="padding"></div>-->
 
-            </div>
-
-            <div>
-                <div style="display: inline-block; width:150px;"><b>Filters</b>
-                </div>
-                <div id="cls-toggle" style="display: inline-block;">
-                    <!--                    <div class="input-description">-->
-                    Hide Special Tokens
-                    <!--                    </div>-->
-                    <label class="switch" style="vertical-align: middle;">
-                        <input type="checkbox" checked="checked">
-                        <span class="short-slider round"></span>
-                    </label>
-                </div>
-                <div style="margin-left: 25px;display: inline-block;">
-                    Show top <span id="my-range-value">70</span>% of att:
-                </div>
-
-                <div class="slide-container"
-                     style="display: inline-block;margin-left: 5px;width:calc(100% - 550px);">
-                    <!--                    <label for="my-range">-->
-
-                    <!--                    </label>-->
-                    <input
-                            type="range" min="0" max="100" value="70"
-                            class="slider" id="my-range"
-                            style="vertical-align: middle;display: inline-block;">
-                </div>
-            </div>
-
-            <div id="layer-selection" style="margin-top: 10px;">
-                <div class="input-description"
-                     style="display: inline-block; width: 150px;vertical-align: top;">
-                    Layer
-                </div>
-                <div class="layer-select btn-group btn-group-toggle"
-                     data-toggle="buttons" id="layer-select"
-                     style="vertical-align: top;">
 
                 </div>
-            </div>
-
-            <div id="selected-head-display">
-                <div class="input-description" style="display: inline-block; width: 150px;vertical-align: top;">
-                    Selected heads:
-                </div>
-                <div id="selected-heads" style="display:inline-block;vertical-align: top;">
-
-                </div>
-            </div>
-
-            <div id="connector-container">
-                <div id="connector-controls">
-                    <div class="left-control-half">
-
-
-                        <!--                        <div id="layer-selection">-->
-                        <!--                            <div class="input-description">-->
-                        <!--                                Layer:-->
-                        <!--                            </div>-->
-                        <!--                            <div class="layer-select btn-group btn-group-toggle"-->
-                        <!--                                 data-toggle="buttons" id="layer-select">-->
-
-                        <!--                            </div>-->
-                        <!--                        </div>-->
-
-                    </div>
-                    <div class="right-control-half head-control">
-<!--                        <div id="selected-head-display">-->
-<!--                            <div class="input-description">-->
-<!--                                Selected heads:-->
-<!--                            </div>-->
-<!--                            <div id="selected-heads">-->
-
-<!--                            </div>-->
-<!--                        </div>-->
-                        <div class="select-input" id="head-all-or-none">
-                            <button id="select-all-heads">Select all heads
-                            </button>
-                            <button id="select-no-heads">Unselect all heads
-                            </button>
-                        </div>
-                        <div id="usage-info">
-                            <p>
-                                You focus on one token by <b>click</b>.
-                                You can mask any token by <b>double click</b>.
-                            </p>
-                            <p>
-                                You can select and de-select a head by a
-                                <b>click</b>
-                                on the heatmap columns
-                            </p>
+                <div id="connector-container">
+                    <div id="connector-controls">
+                        <div class="right-control-half head-control">
+                            <div id="usage-info">
+                                <p>
+                                    You focus on one token by <b>click</b>.
+                                    You can mask any token by <b>double
+                                    click</b>.
+                                </p>
+                                <p>
+                                    You can select and de-select a head by a
+                                    <b>click</b>
+                                    on the heatmap columns
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div id="atn-container" class="text-center">
-                    <div id="left-att-head-div">
-                    <svg id="left-att-heads" width="182" height="442"></svg>
+                    <div id="atn-container" class="text-center">
+                        <div id="left-att-head-div" class="no-small-dev">
+                            <svg id="left-att-heads" width="182"
+                                 height="442"></svg>
+                        </div>
+                        <div id="left-tokens"></div>
+                        <svg id="atn-display" height="442" width="200"></svg>
+                        <div id="right-tokens"></div>
+                        <div id="right-att-head-div" class="no-small-dev">
+                            <svg id="right-att-heads" width="182"
+                                 height="442"></svg>
+                        </div>
                     </div>
-                    <div id="left-tokens"></div>
-                    <svg id="atn-display" height="442" width="200"></svg>
-                    <div id="right-tokens"></div>
-                    <div id="right-att-head-div">
-                    <svg id="right-att-heads" width="182" height="442"></svg>
-                    </div>
+                    <div id="vis-break"></div>
                 </div>
-                <div id="vis-break"></div>
             </div>
             <!--        </div>-->
         `

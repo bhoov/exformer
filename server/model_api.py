@@ -4,6 +4,7 @@ import psutil
 
 import torch
 from transformers import AutoConfig, AutoTokenizer, AutoModelWithLMHead, AutoModel
+import hjson
 
 from transformer_formatter import TransformerOutputFormatter
 from utils.f import delegates, pick, memoize
@@ -16,6 +17,12 @@ ray.init(address="auto", redis_password="5241590000000000", ignore_reinit_error=
 def get_details(mname):
     return ModelDetails.remote(mname)
 
+
+def get_supported_model_names(fname):
+    with open(fname, 'r') as fp: txt = fp.read()
+    all_models = hjson.loads(txt)
+    model_names = [o['name'] for o in all_models['models']]
+    return model_names
 
 def get_model_tok(mname):
     conf = AutoConfig.from_pretrained(mname, output_attentions=True, output_past=False)
@@ -72,6 +79,8 @@ class ModelDetails:
             topk: How many top predictions to report
         """
         ids = self.tok.convert_tokens_to_ids(tokens)
+
+        print("\n\nRUNNING TOKENS FOR SENTENCE\n", orig_sentence, "\n", tokens, "\n\n")
 
         # For GPT2, add the beginning of sentence token to the input. Note that this will work on all models but XLM
 

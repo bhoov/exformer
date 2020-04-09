@@ -5,6 +5,7 @@ import { DivHover, DivHoverOpts, PointsTo } from "./DivHover"
 import { D3Sel } from "../etc/Util";
 import { SVG } from "../etc/SVGplus"
 import * as tf from '@tensorflow/tfjs'
+import tippy from 'tippy.js';
 import { Tensor3D } from "@tensorflow/tfjs";
 
 // The below two (interface and function) can become a class
@@ -16,7 +17,7 @@ export type AttentionHeadBoxI = {
 
 /**
  * From an attention matrix selected by layer, show a summary of the attentions belonging to each head.
- * 
+ *
  * @param headMat The matrix representing all the attentions by head (layer already selected) <head, from, to>
  * @param headList The heads that are selected
  * @param side Is this the right or the left display?
@@ -36,7 +37,7 @@ export function getAttentionInfo(headMat: number[][][], headList: number[], side
     let dim = null
     // Only change the attention graph opposite selected token
     if (token != null && (token.side != side)) {
-        dim = token.side == "left" ? -2 : -1 // Assign to "from" direction if "left" 
+        dim = token.side == "left" ? -2 : -1 // Assign to "from" direction if "left"
     }
 
     let axis: number = side == "left" ? 2 : 1;
@@ -101,7 +102,7 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
     headCells: D3Sel;
     opacityScale: d3.ScaleLinear<any, any>;
 
-    hoverOps: Partial<DivHoverOpts> = { 
+    hoverOps: Partial<DivHoverOpts> = {
         height: 30,
         width: 70,
         pointsTo: PointsTo.BottomRight,
@@ -154,10 +155,10 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
 
         return this._current
     }
-    
+
     makeHtmlForPopup(h: number) {
         const out = `<b>Head:</b> ${h}` // Increment by 1 for display
-        console.log(out);
+        // console.log(out);
         return out
     }
 
@@ -213,13 +214,19 @@ export class AttentionHeadBox extends VComponent<AttentionHeadBoxI>{
                 opacity: (d: number) => this.opacityScale(d),
                 fill: "blue"
             })
+            .each(function(d,i){
+                tippy(<SVGRectElement>this,{
+                    content:self.makeHtmlForPopup(i + 1),
+                    allowHTML:true
+                } )
+            })
             .on("mouseover", (d:number, i) => {
-                self.divHover.html(self.makeHtmlForPopup(i + 1))
-                self.divHover.show()
+                // self.divHover.html(self.makeHtmlForPopup(i + 1))
+                // self.divHover.show()
                 self.eventHandler.trigger(AttentionHeadBox.events.boxMouseOver, boxEvent(i))
             })
             .on("mouseout", (d, i) => {
-                self.divHover.hide()
+                // self.divHover.hide()
                 self.eventHandler.trigger(AttentionHeadBox.events.boxMouseOut, boxEvent(i))
             })
             .on("click", (d, i) => {
