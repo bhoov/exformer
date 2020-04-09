@@ -32,3 +32,33 @@ class ModelDetailPayload(BaseModel):
 
 class ModelDetailResponse(HashableResponseModel):
     payload: ModelDetailPayload
+
+class FullSingleTokenInfo(HashableBaseModel):
+    text: str
+    topk_words: List[str]
+    topk_probs: List[float]
+
+class AttentionMetaResult(HashableBaseModel):
+    att: List[List[List[float]]]
+    left: List[FullSingleTokenInfo]
+    right: List[FullSingleTokenInfo]
+
+
+class FormattedAttentionResponse(HashableBaseModel):
+    aa: AttentionMetaResult
+
+    @classmethod
+    def from_transformer_output(cls, details):
+        aa = details['aa']
+        meta_result = AttentionMetaResult(att=aa['att'], left=aa['left'], right=aa['right'])
+        out = cls(aa=meta_result)
+        return out
+
+class AttentionResponse(HashableResponseModel):
+    payload: FormattedAttentionResponse
+
+    @classmethod
+    def from_transformer_output(cls, details, status=200):
+        payload = FormattedAttentionResponse.from_transformer_output(details)
+        out = cls(payload=payload, status=status)
+        return out

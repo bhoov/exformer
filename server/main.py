@@ -1,5 +1,6 @@
 import argparse
 import numpy as np
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 import uvicorn
 from async_lru import alru_cache
+from pydantic import BaseModel
 
 import api
 import json
@@ -24,11 +26,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def to_static_file(hashname:str, response_obj:str):
+def to_static_file(hashname:str, obj:BaseModel):
     """Make a file named `hashname` out of a json_response"""
     fname = pf.DEMO / (hashname + ".json")
-    with open(fname, 'w') as fp:
-        pass
+    print(f"SAVING TO {fname}")
+    with open(fname, 'w+') as fp:
+        fp.write(obj.json())
         
 def preload_model_info(mname):
     print(f"Loading {mname}...")
@@ -42,6 +45,25 @@ def preload_supported_models():
         list(executor.map(preload_model_info, model_names))
     end = time.time()
     print(f"Preloading took {end-start} seconds")
+
+@app.get("/api/_done-with-demos")
+def done_demos():
+    fnames = list(pf.DEMO.glob("*.json"))
+    demo_api_f = pf.CLIENT_SRC / "ts" / "api" / "demoAPI.ts"
+
+    def format_fname(fname):
+        return f"    \"{fname.stem}\": \"{fname.stem}.json\""
+
+    contents = [format_fname(f) for f in fnames]
+    header = r"export const DemoAPI = {"
+
+    to_write = header + "\n" + ",\n".join(contents) + "\n}"
+    print(to_write)
+
+    with open(demo_api_f, 'w+') as fp:
+        fp.write(to_write)
+
+    return 200
 
 # Flask main routes
 @app.get("/")
@@ -85,16 +107,13 @@ async def get_model_details(model:str, request_hash=None) -> api.ModelDetailResp
     nheads = info.num_attention_heads
 
     payload_out = api.ModelDetailPayload(nlayers=nlayers, nheads=nheads)
-
-    return api.ModelDetailResponse(payload=payload_out)
-    # return {
-    #     "status": 200,
-    #     "payload": payload_out,
-    # }
+    out = api.ModelDetailResponse(payload=payload_out)
+    if request_hash is not None: to_static_file(request_hash, out)
+    return out
 
 @app.get("/api/attend-with-meta")
 @alru_cache(maxsize=1024)
-async def get_attentions_and_preds(model:str, sentence:str, layer:int, request_hash=None):
+async def get_attentions_and_preds(model:str, sentence:str, layer:int, request_hash=None) -> api.AttentionResponse:
     """For a sentence, at a layer, get the attentions and predictions
     
     Args:
@@ -125,15 +144,13 @@ async def get_attentions_and_preds(model:str, sentence:str, layer:int, request_h
     details = get_details(model)
     deets = details.from_sentence(sentence)
     payload_out = deets.to_json(layer)
-
-    return {
-        "status": 200,
-        "payload": payload_out
-    }
+    out = api.AttentionResponse.from_transformer_output(payload_out)
+    if request_hash is not None: to_static_file(request_hash, out)
+    return out
 
 @app.post("/api/update-mask")
 @alru_cache(maxsize=1024)
-async def update_masked_attention(payload:api.MaskUpdatePayload):
+async def update_masked_attention(payload:api.MaskUpdatePayload) -> api.AttentionResponse:
     """From tokens and indices of what should be masked, get the attentions and predictions
     
     payload = request['payload']
@@ -183,11 +200,9 @@ async def update_masked_attention(payload:api.MaskUpdatePayload):
 
     deets = details.from_tokens(token_inputs, sentence)
     payload_out = deets.to_json(layer)
-
-    return {
-        "status": 200,
-        "payload": payload_out,
-    }
+    out = api.AttentionResponse.from_transformer_output(payload_out)
+    if request_hash is not None: to_static_file(request_hash, out)
+    return out
 
 if __name__ != "__main__":
     print("Initializing as the main script") # Is never printed

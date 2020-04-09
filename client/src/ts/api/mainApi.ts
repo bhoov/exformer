@@ -38,8 +38,7 @@ function responseJson(response, backupUrl = null, backupPayload = null) {
  * @param backupUrl Backup url in the event that the demo file is not found
  * @param backupPayload Backup payload if demo file not found, for POST requests only
  */
-function checkDemoAPI(toSend, backupUrl = null, backupPayload = null) {
-    const hsh = hash.sha1(toSend);
+function checkDemoAPI(hsh, backupUrl = null, backupPayload = null) {
     console.log("CHECKING DEMOAPI: " + hsh);
     if (DemoAPI.hasOwnProperty(hsh)) {
         // Relies on a symbolic link being present in the dist folder to the demo folder
@@ -54,54 +53,47 @@ function checkDemoAPI(toSend, backupUrl = null, backupPayload = null) {
 
 export class API {
 
+    baseURL: string
     makeDemoHashes:boolean
 
-    constructor(private baseURL: string = null, makeDemoHashes=false) {
-        if (this.baseURL == null) {
-            this.baseURL = baseurl + '/api';
-        }
-        this.makeDemoHashes=true
+    constructor(baseURL: string = null, makeDemoHashes=false) {
+        this.baseURL = baseURL || (baseurl + '/api')
+        this.makeDemoHashes=makeDemoHashes
     }
 
-    getModelDetails(model: string, hashObj: {} | null = null): Promise<rsp.ModelDetailResponse> {
+    getModelDetails(model: string): Promise<rsp.ModelDetailResponse> {
         const toSend = {
             model: model
+        }
+        const key = hash.sha1(toSend)
+
+        if (this.makeDemoHashes) {
+            toSend['request_hash'] = key
         }
 
         const url = makeUrl(this.baseURL + "/get-model-details", toSend)
         console.log("--- GET " + url);
 
-        if (this.makeDemoHashes != null) {
-            const key = hash.sha1(toSend)
-            toSend['request_hash'] = key
-            // d3.json(url).then(r => {
-            //     hashObj[key] = r;
-            // })
-        }
-
-        return checkDemoAPI(toSend, url)
+        return checkDemoAPI(key, url)
     }
 
-    getMetaAttentions(model: string, sentence: string, layer: number, hashObj: {} | null = null): Promise<rsp.AttentionDetailsResponse> {
+    getMetaAttentions(model: string, sentence: string, layer: number): Promise<rsp.AttentionDetailsResponse> {
         const toSend = {
             model: model,
             sentence: sentence,
             layer: layer
         };
+        const key = hash.sha1(toSend)
+
+        // Add hash and value to hashObj
+        if (this.makeDemoHashes) {
+            toSend['request_hash'] = key
+        }
 
         const url = makeUrl(this.baseURL + "/attend-with-meta", toSend)
         console.log("--- GET " + url);
 
-        // Add hash and value to hashObj
-        if (hashObj != null) {
-            const key = hash.sha1(toSend)
-            toSend['request_hash'] = key
-            // d3.json(url).then(r => {
-            //     hashObj[key] = r;
-            // })
-        }
-
-        return checkDemoAPI(toSend, url)
+        return checkDemoAPI(key, url)
     }
 
     /**
@@ -112,7 +104,7 @@ export class API {
      * @param layer Which layer to search at
      * @param hashObj If not null, store the information of the responses into the passed object. Used for creating demos.
      */
-    updateMaskedAttentions(model: string, tokens: TokenDisplay, sentence: string, layer: number, hashObj: {} | null = null): Promise<rsp.AttentionDetailsResponse> {
+    updateMaskedAttentions(model: string, tokens: TokenDisplay, sentence: string, layer: number): Promise<rsp.AttentionDetailsResponse> {
         const toSend = {
             model: model,
             tokens: R.map(R.prop('text'), tokens.tokenData),
@@ -122,22 +114,29 @@ export class API {
             mask: tokens.maskInds.length ? tokens.maskInds : [-1],
             layer: layer,
         }
+        const key = hash.sha1(toSend)
+
+        if (this.makeDemoHashes) {
+            // Add hash and value to hashObj for demo purposes
+            toSend['request_hash'] = key
+        }
 
         const url = makeUrl(this.baseURL + '/update-mask');
         const payload = toPayload(toSend)
 
-
-        if (hashObj != null) {
-            // Add hash and value to hashObj for demo purposes
-            const key = hash.sha1(toSend)
-            toSend['request_hash'] = key
-            // d3.json(url, payload).then(r => {
-            //     hashObj[key] = r;
-            // })
-        }
-
         console.log("--- POST " + url, payload);
 
-        return checkDemoAPI(toSend, url, payload)
+        return checkDemoAPI(key, url, payload)
+    }
+
+    /**
+     * Save the stored demo responses into the client's `demoAPI.ts` file
+     */
+    _saveDemos() {
+        const url = makeUrl(this.baseURL + '/_done-with-demos');
+
+        console.log("--- GET " + url);
+
+        return d3.json(url)
     }
 };
