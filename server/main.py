@@ -4,10 +4,12 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.encoders import jsonable_encoder
 import uvicorn
 from async_lru import alru_cache
 
 import api
+import json
 
 import utils.path_fixes as pf
 from utils.f import ifnone
@@ -21,6 +23,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def to_static_file(hashname:str, response_obj:str):
+    """Make a file named `hashname` out of a json_response"""
+    fname = pf.DEMO / (hashname + ".json")
+    with open(fname, 'w') as fp:
+        pass
+        
+def preload_model_info(mname):
+    print(f"Loading {mname}...")
+    get_details(mname)
+
+def preload_supported_models():
+    model_names = get_supported_model_names(pf.SUPPORTED_MODELS)
+
+    start = time.time()
+    with ThreadPool() as executor:
+        list(executor.map(preload_model_info, model_names))
+    end = time.time()
+    print(f"Preloading took {end-start} seconds")
 
 # Flask main routes
 @app.get("/")
@@ -42,7 +63,7 @@ def send_static_client(file_path:str):
 
 @app.get("/api/get-model-details")
 @alru_cache(maxsize=80)
-async def get_model_details(model:str):
+async def get_model_details(model:str, request_hash=None) -> api.ModelDetailResponse:
     """Get important information about a model, like the number of layers and heads
     
     Args:
@@ -63,19 +84,17 @@ async def get_model_details(model:str):
     nlayers = info.num_hidden_layers
     nheads = info.num_attention_heads
 
-    payload_out = {
-        "nlayers": nlayers,
-        "nheads": nheads,
-    }
+    payload_out = api.ModelDetailPayload(nlayers=nlayers, nheads=nheads)
 
-    return {
-        "status": 200,
-        "payload": payload_out,
-    }
+    return api.ModelDetailResponse(payload=payload_out)
+    # return {
+    #     "status": 200,
+    #     "payload": payload_out,
+    # }
 
 @app.get("/api/attend-with-meta")
 @alru_cache(maxsize=1024)
-async def get_attentions_and_preds(model:str, sentence:str, layer:int):
+async def get_attentions_and_preds(model:str, sentence:str, layer:int, request_hash=None):
     """For a sentence, at a layer, get the attentions and predictions
     
     Args:
@@ -151,6 +170,7 @@ async def update_masked_attention(payload:api.MaskUpdatePayload):
     sentence = payload.sentence
     mask = payload.mask
     layer = payload.layer
+    request_hash = payload.request_hash
 
     details = get_details(model)
 

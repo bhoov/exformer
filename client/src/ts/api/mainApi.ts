@@ -54,10 +54,13 @@ function checkDemoAPI(toSend, backupUrl = null, backupPayload = null) {
 
 export class API {
 
-    constructor(private baseURL: string = null) {
+    makeDemoHashes:boolean
+
+    constructor(private baseURL: string = null, makeDemoHashes=false) {
         if (this.baseURL == null) {
             this.baseURL = baseurl + '/api';
         }
+        this.makeDemoHashes=true
     }
 
     getModelDetails(model: string, hashObj: {} | null = null): Promise<rsp.ModelDetailResponse> {
@@ -68,11 +71,12 @@ export class API {
         const url = makeUrl(this.baseURL + "/get-model-details", toSend)
         console.log("--- GET " + url);
 
-        if (hashObj != null) {
+        if (this.makeDemoHashes != null) {
             const key = hash.sha1(toSend)
-            d3.json(url).then(r => {
-                hashObj[key] = r;
-            })
+            toSend['request_hash'] = key
+            // d3.json(url).then(r => {
+            //     hashObj[key] = r;
+            // })
         }
 
         return checkDemoAPI(toSend, url)
@@ -91,9 +95,10 @@ export class API {
         // Add hash and value to hashObj
         if (hashObj != null) {
             const key = hash.sha1(toSend)
-            d3.json(url).then(r => {
-                hashObj[key] = r;
-            })
+            toSend['request_hash'] = key
+            // d3.json(url).then(r => {
+            //     hashObj[key] = r;
+            // })
         }
 
         return checkDemoAPI(toSend, url)
@@ -125,9 +130,10 @@ export class API {
         if (hashObj != null) {
             // Add hash and value to hashObj for demo purposes
             const key = hash.sha1(toSend)
-            d3.json(url, payload).then(r => {
-                hashObj[key] = r;
-            })
+            toSend['request_hash'] = key
+            // d3.json(url, payload).then(r => {
+            //     hashObj[key] = r;
+            // })
         }
 
         console.log("--- POST " + url, payload);
