@@ -16,6 +16,10 @@ export type ModelConfig = {
     kind: ModelKind
 }
 
+export type SupportedModels = {
+    models: ModelConfig[]
+}
+
 
 /**
  * ATTENTION RESULTS FROM BACKEND

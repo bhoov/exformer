@@ -87,8 +87,8 @@ class TransformerOutputFormatter:
 
         aa: {
             att: number[][][]
-            left: List[str]
-            right: List[str]
+            left: List[info]
+            right: List[info]
         }
         """
         # Convert the embeddings, attentions, and contexts into list. Perform rounding

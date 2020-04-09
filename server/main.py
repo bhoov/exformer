@@ -3,14 +3,18 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor as ThreadPool
 
 import numpy as np
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.encoders import jsonable_encoder
 import uvicorn
 from async_lru import alru_cache
+from pydantic import BaseModel
 
 import api
+import json
 
 import utils.path_fixes as pf
 from utils.f import ifnone
@@ -18,7 +22,9 @@ from model_api import get_details, get_supported_model_names
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--port", default=8000, type=int, help="Port to run the app. ")
-parser.add_argument("--preload", action="store_true", help="If given, preload all models")
+parser.add_argument(
+    "--preload", action="store_true", help="If given, preload all models"
+)
 
 app = FastAPI()
 app.add_middleware(
@@ -29,9 +35,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def to_static_file(hashname: str, obj: BaseModel):
+    """Make a file named `hashname` out of a json_response"""
+    fname = pf.DEMO / (hashname + ".json")
+    print(f"SAVING TO {fname}")
+    with open(fname, "w+") as fp:
+        fp.write(obj.json())
+
+
 def preload_model_info(mname):
     print(f"Loading {mname}...")
     get_details(mname)
+
 
 def preload_supported_models():
     model_names = get_supported_model_names(pf.SUPPORTED_MODELS)
@@ -42,14 +58,36 @@ def preload_supported_models():
     end = time.time()
     print(f"Preloading took {end-start} seconds")
 
+
+@app.get("/api/_done-with-demos")
+def done_demos():
+    fnames = list(pf.DEMO.glob("*.json"))
+    demo_api_f = pf.CLIENT_SRC / "ts" / "api" / "demoAPI.ts"
+
+    def format_fname(fname):
+        return f'    "{fname.stem}": "{fname.stem}.json"'
+
+    contents = [format_fname(f) for f in fnames]
+    header = r"export const DemoAPI = {"
+
+    to_write = header + "\n" + ",\n".join(contents) + "\n}"
+    print(to_write)
+
+    with open(demo_api_f, "w+") as fp:
+        fp.write(to_write)
+
+    return 200
+
+
 # Flask main routes
 @app.get("/")
 def index():
     return RedirectResponse(url="client/exBERT.html")
 
+
 # the `file_path:path` says to accept any path as a string here. Otherwise, `file_paths` containing `/` will not be served properly
 @app.get("/client/{file_path:path}")
-def send_static_client(file_path:str):
+def send_static_client(file_path: str):
     """ Serves (makes accessible) all files from ./client/ to ``/client/{path}``
 
     Args:
@@ -60,9 +98,10 @@ def send_static_client(file_path:str):
     print("Finding file: ", f)
     return FileResponse(f)
 
+
 @app.get("/api/get-model-details")
 @alru_cache(maxsize=80)
-async def get_model_details(model:str):
+async def get_model_details(model: str, request_hash=None) -> api.ModelDetailResponse:
     """Get important information about a model, like the number of layers and heads
     
     Args:
@@ -83,19 +122,18 @@ async def get_model_details(model:str):
     nlayers = info.num_hidden_layers
     nheads = info.num_attention_heads
 
-    payload_out = {
-        "nlayers": nlayers,
-        "nheads": nheads,
-    }
+    payload_out = api.ModelDetailPayload(nlayers=nlayers, nheads=nheads)
+    out = api.ModelDetailResponse(payload=payload_out)
+    if request_hash is not None:
+        to_static_file(request_hash, out)
+    return out
 
-    return {
-        "status": 200,
-        "payload": payload_out,
-    }
 
 @app.get("/api/attend-with-meta")
 @alru_cache(maxsize=1024)
-async def get_attentions_and_preds(model:str, sentence:str, layer:int):
+async def get_attentions_and_preds(
+    model: str, sentence: str, layer: int, request_hash=None
+) -> api.AttentionResponse:
     """For a sentence, at a layer, get the attentions and predictions
     
     Args:
@@ -126,15 +164,17 @@ async def get_attentions_and_preds(model:str, sentence:str, layer:int):
     details = get_details(model)
     deets = details.from_sentence(sentence)
     payload_out = deets.to_json(layer)
+    out = api.AttentionResponse.from_transformer_output(payload_out)
+    if request_hash is not None:
+        to_static_file(request_hash, out)
+    return out
 
-    return {
-        "status": 200,
-        "payload": payload_out
-    }
 
 @app.post("/api/update-mask")
 @alru_cache(maxsize=1024)
-async def update_masked_attention(payload:api.MaskUpdatePayload):
+async def update_masked_attention(
+    payload: api.MaskUpdatePayload,
+) -> api.AttentionResponse:
     """From tokens and indices of what should be masked, get the attentions and predictions
     
     payload = request['payload']
@@ -171,6 +211,7 @@ async def update_masked_attention(payload:api.MaskUpdatePayload):
     sentence = payload.sentence
     mask = payload.mask
     layer = payload.layer
+    request_hash = payload.request_hash
 
     details = get_details(model)
 
@@ -183,17 +224,18 @@ async def update_masked_attention(payload:api.MaskUpdatePayload):
 
     deets = details.from_tokens(token_inputs, sentence)
     payload_out = deets.to_json(layer)
+    out = api.AttentionResponse.from_transformer_output(payload_out)
+    if request_hash is not None:
+        to_static_file(request_hash, out)
+    return out
 
-    return {
-        "status": 200,
-        "payload": payload_out
-    }
 
 if __name__ == "__main__":
-    print("Initializing as the main script") # Is never printed
+    print("Initializing as the main script")  # Is never printed
     args, _ = parser.parse_known_args()
     # This file is not run as __main__ in the uvicorn environment
-    if args.preload: preload_supported_models()
-    uvicorn.run(app, host='127.0.0.1', port=args.port)
+    if args.preload:
+        preload_supported_models()
+    uvicorn.run(app, host="127.0.0.1", port=args.port)
 else:
     print("Running from something else  =')")
