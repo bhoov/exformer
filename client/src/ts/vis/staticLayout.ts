@@ -111,14 +111,16 @@ export function createStaticSkeleton(base: D3Sel) {
                         <div class="right-control-half head-control">
                             <div id="usage-info">
                                 <p>
-                                    You focus on one token by <b>click</b>.
-                                    You can mask any token by <b>double
+                                    You <em>focus</em> on one token by <b>click</b>.
+                                    For bidirectional models, you can <em>mask</em> any token by <b>double
                                     click</b>.
                                 </p>
                                 <p>
-                                    You can select and de-select a head by a
-                                    <b>click</b>
+                                    You can <em>toggle</em> a head by a <b>click</b>
                                     on the heatmap columns
+                                </p>
+                                <p>
+                                    Tokens on the <em>left</em> attend to tokens on the <em>right</em>.
                                 </p>
                             </div>
                         </div>
