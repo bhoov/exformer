@@ -32,7 +32,7 @@ export class UIConfig {
     _nHeads: number | null;
     _nLayers: number | null;
     private _token: tp.TokenEvent;
-    supportedModels:tp.ModelConfig[]
+    supportedModels:tp.ModelConfig[];
 
     constructor() {
         this._nHeads = 12;
@@ -49,6 +49,15 @@ export class UIConfig {
             self.supportedModels = out.models
             return out.models
         })
+    }
+
+    async getSupportedModels(): Promise<tp.ModelConfig[]> {
+        const txt = await d3.text("conf/supportedModels.hjson")
+        console.log(txt);
+        const out = hjson.parse(txt)
+        console.log("Config HJSON: ", out);
+        this.supportedModels = out.models
+        return out.models
     }
 
     toURL(updateHistory = false) {
@@ -68,7 +77,7 @@ export class UIConfig {
             threshold: params['threshold'] || 0.7,
             tokenInd: params['tokenInd'] || null,
             tokenSide: params['tokenSide'] || null,
-            maskInds: params['maskInds'] || [9],
+            maskInds: params['maskInds'] || [],
             hideClsSep: truthy(params['hideClsSep']) || true,
         }
 
