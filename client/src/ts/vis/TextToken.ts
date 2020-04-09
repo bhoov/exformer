@@ -80,6 +80,17 @@ export abstract class TextTokens extends VComponent<tp.FullSingleTokenInfo[]> {
         // this.divHover = new DivHover(this.parent, this.eventHandler, divOps)
     }
 
+    set title(t) {
+        const that = this;
+        this.divOps.title = t;
+        this.textBoxes.each(function (d, i) {
+            const instance = this._tippy;
+            if (instance)
+                instance.setContent(that.makeHtmlForPopup(d));
+
+        })
+    }
+
     makeHtmlForPopup(token: tp.FullSingleTokenInfo): string {
         let out = R.zip(token.topk_words, token.topk_probs).map(w => {
             const name = w[0].replace(/\u0120/g, " ").replace(/\u010A/g, "\\n")
@@ -118,10 +129,15 @@ export abstract class TextTokens extends VComponent<tp.FullSingleTokenInfo[]> {
                 return d.text.replace("\u0120", " ").replace("\u010A", "\\n")
             })
             .each(function (d, i) {
-                tippy(<HTMLDivElement>this, {
-                    content: self.makeHtmlForPopup(d),
-                    allowHTML: true
-                })
+                const instance = (<any>this)._tippy;
+                if (instance)
+                    instance.setContent(self.makeHtmlForPopup(d));
+                else{
+                    tippy(<HTMLDivElement>this, {
+                        content: self.makeHtmlForPopup(d),
+                        allowHTML: true
+                    })
+                }
             })
             .on('mouseover', function (d, i) {
                 const sel = d3.select(this);
