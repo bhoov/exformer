@@ -1,5 +1,7 @@
 import time
 import argparse
+import asyncio
+
 from concurrent.futures import ThreadPoolExecutor as ThreadPool
 
 import numpy as np
@@ -10,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 import uvicorn
+import ray
 from async_lru import alru_cache
 from pydantic import BaseModel
 
@@ -97,9 +100,8 @@ def send_static_client(file_path: str):
     Args:
         path: Name of file in the client directory
     """
-    print(f"\n\nPath: {file_path}")
     f = str(pf.CLIENT_DIST / file_path)
-    print("Finding file: ", f)
+    print("\nFinding file: ", f, "\n")
     return FileResponse(f)
 
 
@@ -122,7 +124,8 @@ async def get_model_details(model: str, request_hash=None) -> api.ModelDetailRes
     """
     deets = get_details(model)
 
-    info = deets.config
+    info = ray.get(deets.get_config.remote())
+
     nlayers = info.num_hidden_layers
     nheads = info.num_attention_heads
 
@@ -166,7 +169,11 @@ async def get_attentions_and_preds(
         }
     """
     details = get_details(model)
-    deets = details.from_sentence(sentence)
+
+    # deets = details.from_sentence(sentence)
+    deets = ray.get(details.from_sentence.remote(sentence))
+    # deets = await details.from_sentence.remote(sentence)
+
     payload_out = deets.to_json(layer)
     out = api.AttentionResponse.from_transformer_output(payload_out)
     if request_hash is not None:
@@ -219,14 +226,17 @@ async def update_masked_attention(
 
     details = get_details(model)
 
-    MASK = details.tok.mask_token
+    # MASK = details.get_mask_token()
+    MASK = ray.get(details.get_mask_token.remote())
     mask_tokens = lambda toks, maskinds: [
         t if i not in maskinds else ifnone(MASK, t) for (i, t) in enumerate(toks)
     ]
 
     token_inputs = mask_tokens(tokens, mask)
 
-    deets = details.from_tokens(token_inputs, sentence)
+    # deets = details.from_tokens(token_inputs, sentence)
+    deets = ray.get(details.from_tokens.remote(token_inputs, sentence))
+    # deets = await details.from_tokens.remote(token_inputs, sentence)
     payload_out = deets.to_json(layer)
     out = api.AttentionResponse.from_transformer_output(payload_out)
     if request_hash is not None:
