@@ -1,3 +1,4 @@
+import os
 import time
 import argparse
 import asyncio
@@ -243,11 +244,12 @@ async def update_masked_attention(
         to_static_file(request_hash, out)
     return out
 
+args, _ = parser.parse_known_args()
+if args.preload or os.environ.get("EXFORMER_MODE", None) == "production": 
+    preload_supported_models(do_multi=False) # multi seems to almost double used memory for minimal speed improvement
 
 if __name__ == "__main__":
     print("Initializing as the main script")  # Is never printed
-    args, _ = parser.parse_known_args()
-    if args.preload: preload_supported_models(do_multi=False) # multi seems to almost double used memory for minimal speed improvement
     uvicorn.run(app, host='127.0.0.1', port=args.port)
 else:
     print("Running from something else  =')")

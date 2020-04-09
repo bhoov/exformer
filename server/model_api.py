@@ -9,7 +9,9 @@ import hjson
 from transformer_formatter import TransformerOutputFormatter
 from utils.f import delegates, pick, memoize
 
+num_cpus = psutil.cpu_count(logical=False)
 # TODO Find a way to only call once
+print(f"Python found {num_cpus}")
 print("\nConnecting to running ray...\n")
 ray.init(address="auto", redis_password="5241590000000000", ignore_reinit_error=True)
 
