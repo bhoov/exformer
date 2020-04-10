@@ -237,8 +237,8 @@ async def update_masked_attention(
 
     token_inputs = mask_tokens(tokens, mask)
 
-    # deets = details.from_tokens(token_inputs, sentence)
-    deets = ray.get(details.from_tokens.remote(token_inputs, sentence))
+    deets = details.from_tokens(token_inputs, sentence)
+    # deets = ray.get(details.from_tokens.remote(token_inputs, sentence))
     # deets = await details.from_tokens.remote(token_inputs, sentence)
     payload_out = deets.to_json(layer)
     out = api.AttentionResponse.from_transformer_output(payload_out)

@@ -12,13 +12,13 @@ from utils.f import delegates, pick, memoize
 num_cpus = psutil.cpu_count(logical=False)
 # TODO Find a way to only call once
 print(f"Python found {num_cpus}")
-print("\nConnecting to running ray...\n")
-ray.init(address="auto", redis_password="5241590000000000", ignore_reinit_error=True)
+# print("\nConnecting to running ray...\n")
+# ray.init(address="auto", redis_password="5241590000000000", ignore_reinit_error=True)
 
 @memoize
 def get_details(mname):
-    return ModelDetails.remote(mname)
-
+    return ModelDetails(mname)
+    # return ModelDetails.remote(mname)
 
 def get_supported_model_names(fname):
     with open(fname, 'r') as fp: txt = fp.read()
@@ -33,7 +33,7 @@ def get_model_tok(mname):
     return model, tok
 
 
-@ray.remote
+# @ray.remote
 class ModelDetails:
     """Wraps a transformer model and tokenizer to prepare inputs to the frontend visualization"""
 
